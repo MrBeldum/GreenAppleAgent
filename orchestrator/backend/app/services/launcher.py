@@ -2797,6 +2797,15 @@ def _completion_reason_is_bounded_blocker(completion_reason: str) -> bool:
     )
 
 
+def _completion_reason_is_continuous_observation_hold_timeout(completion_reason: str) -> bool:
+    normalized = " ".join((completion_reason or "").lower().split())
+    return (
+        "continuous observation hold" in normalized
+        and "exceeded runtime" in normalized
+        and "scope stayed in report" in normalized
+    )
+
+
 def _terminal_reason(
     *,
     succeeded: bool,
@@ -2807,6 +2816,12 @@ def _terminal_reason(
     never_started: bool = False,
 ) -> tuple[str, str, str]:
     if succeeded:
+        if _completion_reason_is_continuous_observation_hold_timeout(completion_reason):
+            return (
+                "completed",
+                "Run completed successfully.",
+                "Runtime finished continuous-observation report hold successfully.",
+            )
         if _completion_reason_is_bounded_blocker(completion_reason):
             return (
                 "completed_with_blockers",
@@ -2826,6 +2841,12 @@ def _terminal_reason(
         )
     if return_code == 0 and completion_reason == "Surface coverage is still unresolved.":
         return ("surface_coverage_incomplete", completion_reason, f"Runtime stopped before engagement completed: {completion_reason}")
+    if return_code == 0 and _completion_reason_is_continuous_observation_hold_timeout(completion_reason):
+        return (
+            "completed",
+            "Run completed successfully.",
+            "Runtime finished continuous-observation report hold successfully.",
+        )
     if return_code == 0 and completion_reason.startswith("Engagement status is"):
         return ("engagement_incomplete", completion_reason, f"Runtime stopped before engagement completed: {completion_reason}")
     if return_code == 0 and init_only_exit:
@@ -2839,7 +2860,11 @@ def _terminal_reason_from_artifacts(run: Run) -> tuple[bool, str, str, str]:
     normalize_active_scope(run)
     completion_ok, completion_reason = engagement_completion_state(run)
     init_only_exit = _init_only_exit(run)
-    succeeded = (completion_ok or _completion_reason_is_bounded_blocker(completion_reason)) and not init_only_exit
+    succeeded = (
+        completion_ok
+        or _completion_reason_is_bounded_blocker(completion_reason)
+        or _completion_reason_is_continuous_observation_hold_timeout(completion_reason)
+    ) and not init_only_exit
     if succeeded:
         return (succeeded, *_terminal_reason(
             succeeded=True,
