@@ -270,6 +270,8 @@ After report generation, NEVER mutate `scope.json` directly with raw `jq`/`pytho
 
 For continuous-observation targets, `report-writer` stops after writing `report.md`; the operator MUST run `./scripts/finalize_engagement.sh "$DIR"` itself as the final blocking action. If that command enters/reports a continuous observation hold or does not exit normally, the run remains active in `report`; do NOT append `stop_reason=completed`, do NOT override `scope.json` afterward.
 
+Continuous-observation hold timeouts are expected, not `runtime_error`. When the finalization command output contains `Continuous observation hold active`, `continuous observation hold active`, or `stopping continuous observation hold`, the operator MUST NOT emit any `Stop reason:` line, MUST NOT use the `runtime_error` stop code, and MUST NOT write a fallback `Run stop` entry. The only acceptable terminal response is a short observation-hold acknowledgement that the run remains active in `report` for continuous monitoring.
+
 ## Stop Conditions
 
 Do NOT stop because one batch completed or because you can summarize partial progress.
@@ -279,7 +281,7 @@ Before any final stop/completion message:
 - if any case is in `processing` status (in-flight subagent), wait for the outcome before stopping
 - if `./scripts/check_collection_health.sh "$DIR"` fails, do NOT stop
 - if `./scripts/check_surface_coverage.sh "$DIR"` fails, do NOT stop
-- if `./scripts/finalize_engagement.sh "$DIR"` entered a continuous observation hold or did not exit normally, do NOT emit `completed`, do NOT try to override `scope.json` afterward, and do NOT write a `Run stop` fallback for that hold
+- if `./scripts/finalize_engagement.sh "$DIR"` entered a continuous observation hold or did not exit normally, do NOT emit `completed`, do NOT try to override `scope.json` afterward, do NOT emit a `Stop reason:` line, do NOT use `runtime_error`, and do NOT write a `Run stop` fallback for that hold
 - assistant turn boundary, context bloat, or token budget pressure by themselves are NOT valid stop reasons; shrink context with targeted reads and keep advancing
 - cases at terminal stages (`api_tested`, `clean`, `exploited`, `errored`) do NOT block exit — they're done. Only the active-stage tally matters.
 
