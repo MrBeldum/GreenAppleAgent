@@ -1,70 +1,90 @@
-# GreenAppleAgent for HTB
+# GreenAppleAgent For HackTheBox
 
-OpenCode agent setup for authorized Hack The Box / CTF machines from a ParrotOS or Kali Linux VM.
-The agents are tuned for the intended HTB machine flow: enumerate, plan, exploit, recover user/root flags when present, and write a detailed Markdown walkthrough.
+GreenAppleAgent is an OpenCode setup for authorized HackTheBox and CTF lab machines from a ParrotOS or Kali Linux VM.
 
-This fork is intentionally VM-native: it uses the pentesting tools already installed on the VM and does not require Docker.
+It helps you work through a machine in a repeatable way: check your VPN, enumerate services, test likely vulnerabilities, pursue user/root flags when they exist, and write a beginner-friendly walkthrough.
 
-## Scope
+This project is VM-native. It uses the pentesting tools already installed in your ParrotOS/Kali VM and does not require Docker.
 
-- Use only against machines you are authorized to test, such as assigned Hack The Box targets.
-- Default workflow targets one machine IP/hostname at a time.
-- Do not scan adjacent HTB ranges, VPN infrastructure, other players, or unrelated public domains.
-- Brute forcing and password cracking are capped at 5 minutes unless the machine gives a clear hint that a longer attempt is intended.
-- Final outputs should preserve proof and explain every major step toward foothold, user flag, privilege escalation, root flag, cleanup, and lessons learned.
+## Safety Rules
 
-## Requirements
+- Use this only on machines you are authorized to test, such as assigned HackTheBox targets.
+- Work on one machine IP or hostname at a time.
+- HackTheBox target IPs use the broader `10.x.x.x` pattern.
+- Do not scan adjacent HackTheBox ranges, VPN infrastructure, other players, or unrelated public domains.
+- Keep brute forcing and password cracking under 5 minutes unless the machine clearly hints that a longer attempt is intended.
+- Save proof and explain each important step in the final walkthrough.
 
-- ParrotOS or Kali Linux VM
-- HTB VPN connected before starting a machine
-- OpenCode installed: `npm install -g opencode-ai`
-- Required tools: `curl`, `jq`, `sqlite3`, `python3`, `git`, `nmap`
-- Recommended tools: `ffuf`, `gobuster` or `feroxbuster`, `whatweb`, `nikto`, `nuclei`, `sqlmap`, `hydra`, `john`, `hashcat`, `searchsploit`, `smbclient`, `enum4linux-ng`, `netexec`, `evil-winrm`
+## What You Need
+
+- A ParrotOS or Kali Linux VM.
+- The HackTheBox VPN connected before you start a machine.
+- OpenCode installed with `npm install -g opencode-ai`.
+- Required tools: `curl`, `jq`, `sqlite3`, `python3`, `git`, and `nmap`.
+- Recommended tools: `ffuf`, `gobuster` or `feroxbuster`, `whatweb`, `nikto`, `nuclei`, `sqlmap`, `hydra`, `john`, `hashcat`, `searchsploit`, `smbclient`, `enum4linux-ng`, `netexec`, and `evil-winrm`.
 
 ## Install
+
+From the repository root, run:
 
 ```bash
 ./install.sh opencode ~/greenapple-agent
 ```
 
-If installing over an existing runtime and preserving `engagements/` plus `.env`:
+This copies the runnable agent files into `~/greenapple-agent` and creates a `.env` file from the template if one does not already exist.
+
+If you already installed GreenAppleAgent and want to update it while keeping your previous `engagements/` and `.env`, run:
 
 ```bash
 ./install.sh --force opencode ~/greenapple-agent
 ```
 
-## Start
+## Start OpenCode
 
 ```bash
 cd ~/greenapple-agent
 ./run-htb.sh
 ```
 
-`run-htb.sh` sets `GREENAPPLE_RUNTIME_MODE=local` and starts OpenCode with an auto-detected permission-bypass flag. That launch-time flag applies to the whole OpenCode session, so all registered agents inherit it. To force a specific equivalent flag, edit `.env`:
+The launcher starts OpenCode in the installed runtime directory and sets `GREENAPPLE_RUNTIME_MODE=local`, which means tools run from your VM.
 
-```bash
-GREENAPPLE_OPENCODE_FLAGS=--allow-dangerously-skip-permissions
-```
+For normal use, leave `GREENAPPLE_OPENCODE_FLAGS` unset in `.env`. Advanced users can set extra OpenCode TUI flags or an explicit project path there if needed.
 
-The launcher also auto-detects `--dangerously-skip-permissions` and `--dangerously-bypass-approvals-and-sandbox` when those are the flags exposed by your OpenCode build.
+## Start A Machine
 
-## Run A Machine
-
-Inside OpenCode:
+Inside OpenCode, run the `/htb` command with your assigned HackTheBox target:
 
 ```text
-/htb 10.10.x.x
+/htb 10.x.x.x
 ```
 
-The `/htb` command runs a VM preflight, creates an engagement workspace, and follows the HTB machine methodology in `references/hackthebox-machine-mode.md`.
+You can also pass a URL or hostname when the machine requires one:
+
+```text
+/htb http://10.x.x.x
+```
+
+The `/htb` command runs a VM preflight, creates an engagement workspace, and follows the HackTheBox machine methodology in `references/hackthebox-machine-mode.md`.
 
 ## Manual Preflight
 
+If you want to check your VM before opening OpenCode, run:
+
 ```bash
-./scripts/htb_preflight.sh 10.10.x.x
+./scripts/htb_preflight.sh 10.x.x.x
 ```
 
-This checks the OS profile, required tools, HTB VPN hints, and quick target reachability.
+The preflight checks your OS profile, required tools, HackTheBox VPN hints, and quick target reachability. A warning does not always mean the machine is down; some machines only answer on uncommon ports.
+
+## Where Output Goes
+
+Each machine gets an engagement folder under `engagements/`. Important outputs are kept there so you can review or resume later:
+
+- `scans/` stores scan and enumeration output.
+- `downloads/` stores fetched files and artifacts.
+- `tools/` stores temporary tool output.
+- `pids/` tracks background helper processes.
+- `report.md` is the final walkthrough when generated.
 
 ## Runtime Layout
 
@@ -73,7 +93,7 @@ agent/
   .opencode/                  OpenCode config, commands, prompts, plugins
   scripts/                    Runtime helpers and queue/state scripts
   skills/                     Attack methodology skill files
-  references/                 Tool notes, payloads, HTB methodology
+  references/                 Tool notes, payloads, HackTheBox methodology
   engagements/                Runtime output, ignored by git
 install.sh                    OpenCode-only installer
 AGENTS.md                     Repo-maintenance guidance for future agent sessions

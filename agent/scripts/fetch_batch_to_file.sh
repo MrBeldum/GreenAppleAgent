@@ -83,7 +83,7 @@ if [[ -s "$stderr_file" ]]; then
 fi
 
 # Emit best-effort dispatch_start events when event env vars are set.
-# Normal OpenCode HTB runs leave those vars unset, so emit_runtime_event.sh no-ops.
+# Normal OpenCode HackTheBox runs leave those vars unset, so emit_runtime_event.sh no-ops.
 EMIT_RUNTIME_EVENT="${EMIT_RUNTIME_EVENT:-$SCRIPT_DIR/emit_runtime_event.sh}"
 if [[ "$batch_count" -gt 0 && -x "$EMIT_RUNTIME_EVENT" ]] && command -v jq >/dev/null 2>&1; then
     # Synthesize a unique-enough batch id for event consumers.

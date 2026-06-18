@@ -10,7 +10,7 @@ source "$SCRIPT_DIR/lib/placeholders.sh"
 source "$SCRIPT_DIR/lib/source_queue_filter.sh"
 
 # Emit best-effort case outcome events when event env vars are set.
-# Normal OpenCode HTB runs leave those vars unset, so emit_runtime_event.sh no-ops.
+# Normal OpenCode HackTheBox runs leave those vars unset, so emit_runtime_event.sh no-ops.
 # If jq or python3 is missing the call is skipped.
 EMIT_RUNTIME_EVENT="${EMIT_RUNTIME_EVENT:-$SCRIPT_DIR/emit_runtime_event.sh}"
 emit_case_done_batch() {

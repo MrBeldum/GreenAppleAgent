@@ -1,11 +1,11 @@
-# Hack The Box Machine Mode
+# HackTheBox Machine Mode
 
-Use this mode only for authorized HTB/CTF lab machines from a ParrotOS or Kali VM.
+Use this mode only for authorized HackTheBox/CTF lab machines from a ParrotOS or Kali VM.
 
 ## Scope Rules
 
 - Test only the assigned machine IP/hostname and services discovered on that host.
-- Do not scan adjacent HTB ranges, other players, VPN infrastructure, or unrelated public domains.
+- Do not scan adjacent HackTheBox ranges, other players, VPN infrastructure, or unrelated public domains.
 - If a hostname is discovered from the target, add it to `/etc/hosts` only when it resolves back to the assigned machine IP.
 - Keep all evidence in the active engagement directory.
 
@@ -13,7 +13,7 @@ Use this mode only for authorized HTB/CTF lab machines from a ParrotOS or Kali V
 
 - Default runtime is `GREENAPPLE_RUNTIME_MODE=local`; `run_tool` executes host-installed Parrot/Kali tools from the VM.
 - Still use `run_tool <tool>` for consistency, auth handling, logging, and engagement-local paths.
-- Start OpenCode with `./run-htb.sh` so the configured permission-bypass flag is applied.
+- Start OpenCode with `./run-htb.sh` from the installed runtime directory.
 - Run `./scripts/htb_preflight.sh <target>` if tools, VPN, or reachability look suspicious.
 
 ## Beginner-Friendly Workflow
@@ -34,9 +34,9 @@ Use this mode only for authorized HTB/CTF lab machines from a ParrotOS or Kali V
 Prefer clean, copyable commands with output files:
 
 ```bash
-run_tool nmap -Pn -sC -sV -oN "$DIR/scans/nmap-initial.txt" 10.10.11.10
-run_tool nmap -Pn -p- --min-rate 5000 -oN "$DIR/scans/nmap-allports.txt" 10.10.11.10
-run_tool ffuf -u http://10.10.11.10/FUZZ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 40 -ac -o "$DIR/scans/ffuf-root.json"
+run_tool nmap -Pn -sC -sV -oN "$DIR/scans/nmap-initial.txt" 10.x.x.x
+run_tool nmap -Pn -p- --min-rate 5000 -oN "$DIR/scans/nmap-allports.txt" 10.x.x.x
+run_tool ffuf -u http://10.x.x.x/FUZZ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 40 -ac -o "$DIR/scans/ffuf-root.json"
 ```
 
 Do not paste huge raw outputs into chat. Summarize the important lines and reference saved files.
@@ -57,18 +57,18 @@ Do not paste huge raw outputs into chat. Summarize the important lines and refer
 - Record the time limit and why the attempt was justified.
 - If no result appears quickly, stop and return to enumeration.
 
-## Permission Bypass Runtime
+## OpenCode Runtime
 
-- `./run-htb.sh` starts one OpenCode session with the configured dangerous permission-bypass flag.
-- Because agents run inside that same OpenCode session, the flag applies to the operator and all subagents.
-- Leave `GREENAPPLE_OPENCODE_FLAGS` unset to auto-detect `--allow-dangerously-skip-permissions`, `--dangerously-skip-permissions`, or `--dangerously-bypass-approvals-and-sandbox` based on the installed OpenCode build.
+- `./run-htb.sh` starts one OpenCode session in the installed runtime directory.
+- Because agents run inside that same OpenCode session, the project config applies to the operator and all subagents.
+- Leave `GREENAPPLE_OPENCODE_FLAGS` unset for normal use. Advanced users can set extra OpenCode TUI flags or a project path there.
 
 ## Walkthrough Report Format
 
-Use this structure for final HTB-style reports:
+Use this structure for final HackTheBox-style reports:
 
 ```text
-# HTB Machine Walkthrough: <name-or-ip>
+# HackTheBox Machine Walkthrough: <name-or-ip>
 
 ## Scope And Setup
 ## Recon Summary

@@ -38,10 +38,10 @@ collection failures, or unresolved high-risk surfaces instead of generating a mi
 Do NOT call the `skill` tool for report-generation. The required report format and methodology
 are already defined in this command and in your agent instructions. Follow them directly.
 
-Create `report.md` in the engagement directory with the following HTB walkthrough structure:
+Create `report.md` in the engagement directory with the following HackTheBox walkthrough structure:
 
 ```markdown
-# HTB Machine Walkthrough: <name-or-ip>
+# HackTheBox Machine Walkthrough: <name-or-ip>
 
 ## Scope And Setup
 - Target, scope, engagement timeframe, VPN/runtime notes, and boundaries.

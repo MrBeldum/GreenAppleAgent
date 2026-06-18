@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install the OpenCode HTB runtime for ParrotOS/Kali VMs.
+# Install the OpenCode HackTheBox runtime for ParrotOS/Kali VMs.
 
 set -euo pipefail
 
@@ -12,7 +12,7 @@ usage() {
   cat <<'EOF'
 Usage: ./install.sh [--dry-run] [--force] [opencode] [target_dir]
 
-Installs the OpenCode-only GreenAppleAgent runtime for ParrotOS/Kali HTB VMs.
+Installs the OpenCode-only GreenAppleAgent runtime for ParrotOS/Kali HackTheBox VMs.
 Docker, Claude Code, Codex, and orchestrator installs are intentionally not supported.
 
 Options:
@@ -29,7 +29,7 @@ for arg in "$@"; do
     -h|--help) usage; exit 0 ;;
     opencode) PRODUCT="opencode" ;;
     claude|codex|docker)
-      echo "ERROR: only the OpenCode HTB runtime is supported in this fork." >&2
+      echo "ERROR: only the OpenCode HackTheBox runtime is supported in this fork." >&2
       exit 1
       ;;
     *) TARGET_DIR="$arg" ;;
@@ -56,7 +56,7 @@ ok() { printf '[OK] %s\n' "$1"; }
 warn() { printf '[WARN] %s\n' "$1"; }
 fail() { printf '[FAIL] %s\n' "$1"; }
 
-echo "GreenAppleAgent HTB OpenCode installer"
+echo "GreenAppleAgent HackTheBox OpenCode installer"
 echo "Source: $SOURCE_DIR"
 echo "Target: $TARGET_DIR"
 echo ""
@@ -163,4 +163,4 @@ echo "  cd $TARGET_DIR"
 echo "  ./run-htb.sh"
 echo ""
 echo "Then run in OpenCode:"
-echo "  /htb 10.10.x.x"
+  echo "  /htb 10.x.x.x"

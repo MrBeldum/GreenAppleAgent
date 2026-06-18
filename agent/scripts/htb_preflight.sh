@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fast readiness check for Parrot/Kali VM + Hack The Box targets.
+# Fast readiness check for Parrot/Kali VM + HackTheBox targets.
 
 set -euo pipefail
 
@@ -9,7 +9,7 @@ ok() { printf '[OK] %s\n' "$1"; }
 warn() { printf '[WARN] %s\n' "$1"; }
 miss() { printf '[MISSING] %s\n' "$1"; }
 
-printf 'Hack The Box VM preflight\n'
+printf 'HackTheBox VM preflight\n'
 printf '==========================\n'
 
 if [[ -r /etc/os-release ]]; then
@@ -26,7 +26,7 @@ runtime="${GREENAPPLE_RUNTIME_MODE:-local}"
 if [[ "$runtime" == "local" ]]; then
   ok "GREENAPPLE_RUNTIME_MODE=local (host VM tools)"
 else
-  warn "GREENAPPLE_RUNTIME_MODE=$runtime; set GREENAPPLE_RUNTIME_MODE=local for no-Docker HTB VM use"
+  warn "GREENAPPLE_RUNTIME_MODE=$runtime; set GREENAPPLE_RUNTIME_MODE=local for no-Docker HackTheBox VM use"
 fi
 
 required=(opencode curl jq sqlite3 python3 git nmap)
@@ -56,13 +56,13 @@ if ip link show tun0 >/dev/null 2>&1; then
 elif ip -o link show 2>/dev/null | grep -Eq 'tun[0-9]'; then
   ok "Tunnel interface exists"
 else
-  warn "No tun interface found. Connect the HTB VPN before /engage."
+  warn "No tun interface found. Connect the HackTheBox VPN before /engage."
 fi
 
-if ip route 2>/dev/null | grep -Eq '10\.(10|129)\.'; then
-  ok "HTB-looking route present"
+if ip route 2>/dev/null | grep -Eq '(^|[[:space:]])10\.[0-9]{1,3}\.'; then
+  ok "HackTheBox-looking 10.x.x.x route present"
 else
-  warn "No 10.10.x.x / 10.129.x.x route detected yet"
+  warn "No 10.x.x.x route detected yet"
 fi
 
 if [[ -n "$TARGET" ]]; then
@@ -77,7 +77,7 @@ if [[ -n "$TARGET" ]]; then
   elif ping -c 1 -W 2 "$host" >/dev/null 2>&1; then
     ok "Target responds to ICMP"
   else
-    warn "Target did not answer quick ICMP/TCP checks; HTB boxes may still be up on other ports"
+    warn "Target did not answer quick ICMP/TCP checks; HackTheBox machines may still be up on other ports"
   fi
 fi
 
