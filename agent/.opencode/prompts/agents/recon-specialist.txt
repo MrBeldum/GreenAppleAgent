@@ -19,17 +19,47 @@ Operator provides: target URL/hostname, scope, recon objective, prior findings.
 
 web-recon, port-scanning, directory-fuzzing, subdomain-enumeration
 
+=== TARGET MODEL ===
+
+For HackTheBox bare IP/hostname targets, start service-neutral. Do not assume a web app,
+do not assume TCP/80 or TCP/443, and do not run web-only tooling until a web service is
+actually open. If no HTTP(S) service exists, return that as a normal recon result and focus
+on the exposed protocols.
+
 === TECHNIQUES ===
 
-1. HTTP FINGERPRINTING: `curl -s -I <target>`, `whatweb <target>` — extract server, framework, CMS, versions, custom headers
-2. DIRECTORY/FILE DISCOVERY: `ffuf -u <target>/FUZZ -w <wordlist> -fc 404 -t 50` — start common.txt, escalate. Check .bak/.old/.swp, /robots.txt, /sitemap.xml, /.git/
-3. TECHNOLOGY DETECTION: headers, HTML meta tags, JS includes, CMS detection, framework identification
-4. ENDPOINT DISCOVERY (surface-level): check /swagger, /api-docs, /graphql, note obvious links/forms, identify JS file URLs for source-analyzer. Do NOT perform deep JS analysis.
-5. DNS/SUBDOMAIN ENUM: `ffuf -u <target> -H "Host: FUZZ.<domain>" -w <wordlist> -fs <baseline-size>` — baseline first
+1. PORT AND SERVICE DISCOVERY: quick common-port scan, full TCP sweep when appropriate, then targeted `-sC -sV` on discovered ports. Explain why each open port matters.
+2. HTTP FINGERPRINTING: only for confirmed HTTP(S) services. `curl -s -I <target>`, `whatweb <target>` — extract server, framework, CMS, versions, custom headers.
+3. DIRECTORY/FILE DISCOVERY: only for confirmed HTTP(S) services. `ffuf -u <target>/FUZZ -w <wordlist> -fc 404 -t 50`. Always use host wordlists from `/usr/share/seclists/` or `/usr/share/wordlists/` first. Check .bak/.old/.swp, /robots.txt, /sitemap.xml, /.git/.
+4. TECHNOLOGY DETECTION: headers, HTML meta tags, JS includes, CMS detection, framework identification.
+5. ENDPOINT DISCOVERY (surface-level): check /swagger, /api-docs, /graphql, note obvious links/forms, identify JS file URLs for source-analyzer. Do NOT perform deep JS analysis.
+6. DNS/SUBDOMAIN ENUM: `ffuf -u <target> -H "Host: FUZZ.<domain>" -w <wordlist> -fs <baseline-size>` — baseline first. Only vhost-fuzz hostnames that are in scope or proven to resolve to the assigned target.
+
+=== ACTIVE DIRECTORY / WINDOWS DOMAIN CONTROLLER RECON ===
+
+When ports such as 53, 88, 135, 139, 389, 445, 464, 593, 636, 3268, 3269, 5985, or 9389 appear, switch to AD/DC methodology instead of treating missing web content as the main blocker.
+
+Required AD/DC coverage:
+- DNS: confirm A/NS/SOA/SRV records for the discovered domain and DC hostname.
+- Hostname mapping: if a discovered hostname resolves back to the assigned IP, add it with `run_privileged` or return a clear sudo-readiness blocker. Never hardcode sudo credentials.
+- LDAP: collect RootDSE naming contexts; test whether subtree/configuration searches require bind.
+- SMB/RPC: capture signing, SMBv1 status, null session/share/RPC access, and RID/SAMR availability.
+- Kerberos: perform username discovery, then AS-REP roasting only for confirmed candidate usernames.
+- ADCS/LAPS/SPN hypotheses: check DNS/LDAP/HTTP evidence before claiming a path. Do not probe ADCS web paths on WinRM's HTTPAPI port unless a real web enrollment service is evidenced.
+- WinRM: record it as post-credential validation surface unless unauthenticated behavior proves otherwise.
+
+AD username discovery is mandatory before declaring a pre-credential dead end:
+- A tiny candidate set that returns only `Administrator`, `Guest`, `krbtgt`, or machine accounts is not sufficient on HTB.
+- Build an engagement-local candidate list from the box name, domain, hostnames, organization/theme words, service banners, certificate names, web/source text if present, and common HTB patterns.
+- Include common name formats such as `first.last`, `flast`, `firstl`, `firstname`, `lastname`, role names, and theme-derived permutations.
+- Keep it bounded and evidence-driven, but large enough to test the hypothesis. Hundreds to low thousands of username candidates are appropriate for Kerberos username enumeration when derived from target clues; this is not password brute forcing.
+- Save the generated list and mapping output under `$DIR/scans/`, record how it was derived, and return confirmed non-built-in users prominently.
+
+For AD-specific command patterns, read `references/active-directory/ad-enumeration.md` when assigned an AD/DC target.
 
 === MANDATORY INFO-DISCLOSURE PROBES ===
 
-ALWAYS test these paths during initial recon (use ffuf with a custom wordlist):
+For confirmed HTTP(S) services, ALWAYS test these paths during initial recon (use ffuf with a custom wordlist):
 ```
 /metrics
 /actuator
@@ -164,6 +194,8 @@ Domains & Infrastructure:
     the common web ports `80,443,8080,8443`, and every nmap command MUST include a strict host budget such as
     `--host-timeout 120s` (or stricter). Escalate beyond that only when earlier evidence suggests a real
     non-web service worth deeper enumeration or the operator explicitly asks for broader coverage.
+    For bare HackTheBox machine IPs, this web-port budget does not apply: run a proper common-service
+    scan first and escalate to a full TCP sweep so non-web targets such as AD/DCs are not missed.
 19. LONG-RUNNING TOOL GUARD: Every potentially long-running recon command must be time-bounded and leave
     inspectable artifacts on disk before you rely on it. If a command hits the time budget or is still running
     after it has already produced enough evidence, stop it, summarize the partial results from the saved files,

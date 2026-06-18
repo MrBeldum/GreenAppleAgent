@@ -14,12 +14,14 @@
 - Install with `./install.sh opencode ~/greenapple-agent`, start with `./run-htb.sh`, then run `/htb 10.x.x.x`.
 - Default runtime is `GREENAPPLE_RUNTIME_MODE=local`; target-facing tools execute from the Parrot/Kali host VM.
 - Keep using `run_tool <tool>` even in local mode so auth/user-agent handling and engagement paths stay consistent.
+- Use `run_privileged <command>` for in-scope VM setup that genuinely needs root, such as appending proven target hostnames to `/etc/hosts`. Never hardcode sudo usernames or passwords in repo files.
 - `./scripts/htb_preflight.sh <target>` checks required tools, HackTheBox VPN hints, and quick reachability.
 
 ## HackTheBox Rules
 - Scope is the single assigned machine plus hostnames proven to resolve to that machine.
 - Do not scan adjacent HackTheBox ranges, VPN infrastructure, other players, or unrelated public domains.
 - Brute forcing and cracking are capped at 5 minutes unless the machine explicitly hints at longer cracking.
+- A bare machine IP is service-neutral. Do not assume HTTP/80 or start web-only tooling until recon proves a web service exists.
 - Final reports should be beginner-friendly walkthroughs: recon, enumeration, foothold, privesc, proof, cleanup, lessons learned.
 
 ## Verification

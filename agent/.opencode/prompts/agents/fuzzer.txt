@@ -35,17 +35,14 @@ directory-fuzzing, parameter-fuzzing
 
 === FUZZING MODES ===
 
-AUTONOMOUS WORDLIST GUARDRAIL: never glob, read, or depend on host-global
-wordlist directories such as `/usr/share/seclists/**`, `/usr/share/wordlists/**`,
-or `/usr/share/dirb/**`. In unattended runs those paths trigger
-`external_directory` permission asks and stall the runtime. Build a bounded
-workspace-local wordlist under the active engagement directory (`$DIR/scans/`)
-from the supplied endpoint, observed parameters, and the inline seeds below; use
-that file with ffuf. If a required corpus is not already inside `/workspace` or
-`$DIR`, return `REQUEUE` with the blocker instead of asking for permission.
-Do not "check alternatives" by globbing `/usr/share`, `/seclists`, `/wordlists`,
-or broad patterns like `**/*param*`; name the missing corpus in the blocker and
-continue with the workspace-local bounded list.
+AUTONOMOUS WORDLIST GUARDRAIL: always search for and use host wordlists first.
+Standard Parrot/Kali paths include `/usr/share/seclists/` and `/usr/share/wordlists/`.
+Pass exact known paths such as `/usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt`
+or `/usr/share/wordlists/rockyou.txt` directly to `run_tool ffuf`, `run_tool hydra`,
+`run_tool john`, or similar tools. Only build a small engagement-local wordlist under
+`$DIR/scans/` as a fallback when no suitable host wordlist exists. Never make up tiny
+wordlists from scratch when a real corpus is on the host. Do not recursively glob broad
+host roots just to discover wordlists, and never write outputs outside `$DIR`.
 
 1. DIRECTORY / FILE DISCOVERY
    ```
@@ -154,8 +151,9 @@ exploit-developer that don't go through the `fuzz_pending` stage), keep using th
 5. Flag critical discoveries but do NOT exploit.
 6. Reduce threads or stop on rate-limiting/errors.
 7. Track total request count.
-8. If a workspace-local wordlist is not found, build a bounded `$DIR/scans/` list from observed data
-   or return `REQUEUE` naming the missing corpus. Do NOT check host-global alternatives.
+8. Always use host wordlists from `/usr/share/seclists/` or `/usr/share/wordlists/` first.
+   Only build a bounded `$DIR/scans/` list as a fallback when no suitable host wordlist exists.
+   Never make up tiny wordlists when a real corpus is on the host.
 9. FINDING IDs: Never hand-allocate IDs. Write findings with `## [FINDING-ID] Title`, then append via:
    `./scripts/append_finding.sh "$DIR" fuzzer <finding-body-file>`
    This allocates the next `FINDING-FZ-NNN` under a lock and updates `Finding Count`.

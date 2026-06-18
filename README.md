@@ -21,7 +21,8 @@ This project is VM-native. It uses the pentesting tools already installed in you
 - The HackTheBox VPN connected before you start a machine.
 - OpenCode installed with `npm install -g opencode-ai`.
 - Required tools: `curl`, `jq`, `sqlite3`, `python3`, `git`, and `nmap`.
-- Recommended tools: `ffuf`, `gobuster` or `feroxbuster`, `whatweb`, `nikto`, `nuclei`, `sqlmap`, `hydra`, `john`, `hashcat`, `searchsploit`, `smbclient`, `enum4linux-ng`, `netexec`, and `evil-winrm`.
+- Recommended tools: `ffuf`, `gobuster` or `feroxbuster`, `whatweb`, `nikto`, `nuclei`, `sqlmap`, `hydra`, `john`, `hashcat`, `searchsploit`, `smbclient`, `enum4linux-ng`, `netexec`, `kerbrute`, `certipy`, `bloodhound-python`, `evil-winrm`, and `msfconsole` from Metasploit.
+- Some VM setup actions need root privileges, such as adding proven in-scope hostnames to `/etc/hosts`. GreenAppleAgent never stores sudo usernames or passwords. Configure sudo in the VM, or run `sudo -v` before starting an autonomous session if your sudo policy requires a cached credential.
 
 ## Install
 
@@ -58,7 +59,9 @@ Inside OpenCode, run the `/htb` command with your assigned HackTheBox target:
 /htb 10.x.x.x
 ```
 
-You can also pass a URL or hostname when the machine requires one:
+Use a bare IP when you only know the assigned machine. The agent treats this as a service-neutral target and discovers open services before deciding whether web crawling is appropriate.
+
+You can also pass a URL or hostname when the machine explicitly requires one:
 
 ```text
 /htb http://10.x.x.x

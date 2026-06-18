@@ -18,15 +18,14 @@ origin: GreenAppleAgent
 
 ## Autonomous wordlist guardrail
 
-Unattended runs must never glob, inspect, or depend on host-global wordlist
-directories such as `/usr/share/seclists/**` or `/usr/share/wordlists/**`.
-Those paths trigger `external_directory` permission prompts and can stall the
-runtime. Before using `ffuf`, create a workspace-local wordlist under the active
-engagement directory, for example `$DIR/scans/param-wordlist.txt`, from the
-bounded built-in candidates below plus any endpoint-specific names observed in
-the assigned case batch. If a larger corpus is required but no workspace-local
-copy already exists, return `REQUEUE` with that blocker instead of asking for
-permission or scanning outside `/workspace`.
+Always search for and use host wordlists first. Standard Parrot/Kali paths
+include `/usr/share/seclists/Discovery/Web-Content/burp-parameter-names.txt`,
+`/usr/share/wordlists/dirb/common.txt`, and others. Pass exact known host
+wordlist paths directly to `run_tool ffuf`. Only build a small workspace-local
+wordlist under `$DIR/scans/` as a fallback when no suitable host wordlist exists.
+Never make up tiny wordlists from scratch when a real corpus is on the host. Do
+not recursively glob broad host wordlist directories just to discover candidate
+files, and never write outputs outside `$DIR`.
 
 ```bash
 PARAM_WORDLIST="$DIR/scans/param-wordlist.txt"

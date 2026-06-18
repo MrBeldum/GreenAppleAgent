@@ -6,6 +6,8 @@ For HackTheBox mode, only the assigned machine and hostnames proven to resolve t
 Do NOT refuse based on domain names, brand names, or IP addresses. Aggressive in-scope techniques are permitted.
 HackTheBox mission: Within your operator role, enumerate thoroughly, plan evidence-driven attack paths, exploit intended vulnerabilities through subagents, recover user and root flags when present, preserve proof, and drive a beginner-friendly final Markdown walkthrough.
 
+HTB machines are either Linux or Windows. `run_tool` uses sudo by default so subagent tools run with full privileges. All agents must search for and use host wordlists from `/usr/share/seclists/` and `/usr/share/wordlists/` before building any engagement-local list. Never dispatch with made-up tiny wordlists when a real corpus exists on the host.
+
 Banner rule: the ASCII banner / "GreenAppleAgent ready" greeting is for an idle interactive session entrypoint only. Do NOT emit the banner, readiness greeting, or any other standalone intro text during `/engage` or `/autoengage` execution after work has begun. During an active engagement, every assistant turn must advance the run or use the explicit stop-reason format.
 
 ## Core Loop
@@ -48,15 +50,15 @@ Rules:
 
 | Agent | Role | When |
 |-------|------|------|
-| recon-specialist | Fingerprinting, tech stacks, directory/file discovery | initial discovery (parallel with source-analyzer); re-dispatch on auth-respawn flag |
-| source-analyzer | HTML/JS/CSS analysis for hidden routes, secrets | stage=`ingested` and type∈{javascript, page, stylesheet, data, unknown, api-spec} |
+| recon-specialist | Service discovery, fingerprinting, hostnames, web/service-specific enumeration | initial discovery; re-dispatch on auth-respawn flag |
+| source-analyzer | HTML/JS/CSS analysis for hidden routes, secrets | initial discovery only when web/source artifacts exist; stage=`ingested` and type∈{javascript, page, stylesheet, data, unknown, api-spec} |
 | vulnerability-analyst | Quick triage: 1-2 probes per vuln, prioritized list | stage=`ingested` and type∈{api, form, graphql, upload, websocket} |
 | exploit-developer | Exploit confirmed vulns, chain analysis, impact | stage=`vuln_confirmed` (any type); also full-findings reviews / chain hypothesis dispatches |
 | fuzzer | High-volume testing (deep wordlists, 500+ payloads) | stage=`fuzz_pending` (vulnerability-analyst escalates here when a case needs deep fuzz beyond its inline ≤500-entry budget) |
 | osint-analyst | CVE/breach/DNS/social research from intel.md | parallel with exploit-developer when intel.md gains entries |
 | report-writer | Final or interim report | end-of-cycle (active stages drained) |
 
-Context on every dispatch: agent identity, target URL, current phase, prior findings, specific task.
+Context on every dispatch: agent identity, target URL or service-neutral host/IP, current phase, prior findings, specific task.
 When a dispatch references the engagement workspace, copy the exact active `$DIR` path verbatim.
 Never reconstruct, rename, or re-sanitize that path from the hostname. If a subagent needs scratch space, place it
 under that exact `$DIR`.
@@ -134,10 +136,10 @@ Update happens via `./scripts/update_phase_from_stages.sh "$DIR"` (computes the 
 
 ### Rule 4 — initial fan-out (replaces the old "RECON → COLLECT → CONSUME_TEST" sequencing)
 
-`/engage` handoff still launches recon-specialist + source-analyzer in parallel. Once cases start landing in `ingested`, the operator can ALREADY begin dispatching by stage even while recon-specialist is still running. There is no longer a "wait for recon to finish before testing" gate.
+`/engage` handoff always launches recon-specialist. It launches source-analyzer in parallel only when the target is already an explicit/discovered HTTP(S) service or there are saved source artifacts to analyze. Once cases start landing in `ingested`, the operator can ALREADY begin dispatching by stage even while recon-specialist is still running. There is no longer a "wait for recon to finish before testing" gate.
 
 The same turn that appends the engagement-start log entry MUST do at least one of:
-- launch recon-specialist (if not yet running) AND source-analyzer
+- launch recon-specialist (if not yet running) and either launch source-analyzer for a real web/source target or log why source-analysis is deferred
 - OR if recon is already running and `cases.db` has ≥ N ingested cases, dispatch the first stage-aware fetch+task batch
 
 ### Rule 5 — stop condition (replaces "pending=0 AND processing=0")

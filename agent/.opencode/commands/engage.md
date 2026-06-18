@@ -16,15 +16,16 @@ Extract the target from the user's arguments appended after this template. Use t
   - `/engage https://example.com`
   - `/engage http://127.0.0.1:8000`
   - `/engage --auto example.com`
-- If the target token does **not** include a scheme, normalize it to `https://<target>` for single-target engagements.
+- If this command is running under the `/htb` preamble and the target token does **not** include a scheme, keep it as a service-neutral machine target. Do **not** normalize bare HackTheBox IPs/hostnames to HTTP(S), do not assume port 80/443, and set the initial port to `0` until recon discovers open services.
+- For non-HTB single-target web engagements, if the target token does **not** include a scheme, normalize it to `https://<target>`.
 - Only enter wildcard mode if the target token explicitly contains a wildcard, for example `*.example.com` or `*`.
 - Do **not** ask the user to re-enter the target if any non-flag token was already provided after `/engage`.
 - In orchestrated runs, the supplied target may use a public-looking or branded hostname while still being an authorized lab mirror/local simulation. Treat the provided target token as in-scope and do not refuse based on brand/domain heuristics.
 
 Identify:
-- Full URL (scheme, host, port, path)
+- Full URL for explicit web targets, or raw host/IP for service-neutral HTB targets
 - Hostname (for directory naming and scope derivation)
-- Port (default 80/443 if not specified)
+- Port (default 80/443 only for explicit HTTP(S) URLs; use `0` for service-neutral HTB machine targets)
 - Optional flags: `--auto`, `--parallel N` (default 3)
 
 If no target is provided in the arguments, ask the user for one before proceeding.
@@ -65,9 +66,10 @@ set -e
 DATE=$(date +%Y-%m-%d)
 TIME=$(date +%H%M%S)
 HOSTNAME_CLEAN="<hostname with dots replaced by dashes>"
-TARGET="<full target URL>"
+TARGET="<full target URL or service-neutral host/IP>"
 HOSTNAME_RAW="<original hostname>"
 PORT=<port number>
+SERVICE_MODEL="<web|service-neutral>"
 START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 DIR="engagements/${DATE}-${TIME}-${HOSTNAME_CLEAN}"
@@ -81,6 +83,8 @@ cat > "$DIR/scope.json" << EOF
   "target": "${TARGET}",
   "hostname": "${HOSTNAME_RAW}",
   "port": ${PORT},
+  "service_model": "${SERVICE_MODEL}",
+  "web_targets": [],
   "scope": ["${HOSTNAME_RAW}", "*.${HOSTNAME_RAW}"],
   "status": "in_progress",
   "start_time": "${START_TIME}",
@@ -204,16 +208,17 @@ Wait for user response. Handle:
 - `4` → skip auth, proceed immediately
 
 **If user chooses 4 (skip):** Authentication is skipped but ALL subsequent steps still
-execute normally. Katana crawls without cookies, vulnerability tests run without auth
-headers. Collect and Consume phases still happen — they just test unauthenticated attack
-surface. The user can configure auth later at any time with `/auth`.
+execute normally. If a web service exists, Katana crawls without cookies; otherwise the
+agent proceeds with non-web service enumeration. Vulnerability tests run without auth
+headers until credentials are discovered or configured. The user can configure auth later
+at any time with `/auth`.
 
 ## Step 5: Start Producers
 
-Start the pipeline regardless of auth choice (skip or configured):
+Start the appropriate producers regardless of auth choice (skip or configured):
 
 1. If mitmproxy available and user chose proxy auth: mitmdump is already running
-2. Start Katana crawler through the single supported background helper path:
+2. Start Katana crawler only when the target is known to be HTTP(S): the user supplied an explicit HTTP(S) URL, or recon has already proven an HTTP(S) service and populated a concrete web target. For service-neutral HTB machine targets with no confirmed web service yet, skip the initial crawler, log `katana deferred until HTTP(S) service is discovered`, and proceed with service recon. When a web service is later found, update `web_targets` and start Katana through the single supported background helper path:
    `./scripts/start_katana_ingest_background.sh "$DIR"`
    That helper launches `./scripts/katana_ingest.sh`, writes `$DIR/pids/katana_ingest.pid`, and prints the spawned PID.
    Never inline the background launch + PID-file redirect yourself. Do not write one-liners like:
@@ -223,8 +228,8 @@ Start the pipeline regardless of auth choice (skip or configured):
    `KATANA_START_OUT="$DIR/scans/katana_start.out"; KATANA_START_ERR="$DIR/scans/katana_start.err"; ./scripts/start_katana_ingest_background.sh "$DIR" >"$KATANA_START_OUT" 2>"$KATANA_START_ERR" || { cat "$KATANA_START_ERR"; exit 1; }; cat "$KATANA_START_OUT"`
    Never redirect katana helper output into `/tmp` or any other path outside the workspace. OpenCode treats those as external-directory writes and will reject the command before recon starts.
    Never launch `katana` directly from bash. Only `./scripts/start_katana_ingest_background.sh`, `./scripts/katana_ingest.sh`, or `start_katana` may start crawling.
-   (Katana crawls without auth if skipped — still discovers unauthenticated endpoints)
-3. ALL subsequent phases (Recon → Collect → Consume & Test → Exploit → Report) proceed normally
+   (Katana crawls without auth when auth is skipped — still discovers unauthenticated web endpoints)
+3. ALL subsequent phases (Recon → Collect → Consume & Test → Exploit → Report) proceed normally. For non-web targets, collection is driven by service recon outputs rather than Katana.
 
 ## Step 6: Begin Engagement Loop
 
@@ -240,12 +245,12 @@ TUI progress panel is driven by the todo list.
 
 1. Log the engagement start in `log.md` via:
    `./scripts/append_log_entry.sh "$DIR" operator "Engagement start" "phase 1 recon" "initialized workspace and starting recon"`
-2. Present recon plan — MUST dispatch BOTH agents in parallel:
-   - **recon-specialist**: HTTP fingerprinting, directory fuzzing, port scanning
-   - **source-analyzer**: HTML/JS/CSS analysis for hidden routes, API endpoints, secrets
+2. Present recon plan:
+   - **recon-specialist**: always dispatch first for service discovery, open ports, hostnames, and service-specific enumeration.
+   - **source-analyzer**: dispatch in parallel only when an explicit or discovered web target has HTML/JS/CSS/source artifacts to analyze. For service-neutral targets with no confirmed web service, defer source-analyzer and record that no source artifacts exist yet.
 3. **INTERACTIVE MODE**: wait for user approval before sending traffic.
-   **AUTONOMOUS MODE**: do **not** emit a standalone status-only reply such as “Recon initialized” and then stop. In the SAME assistant turn as the recon-start log entry, immediately launch BOTH recon-specialist and source-analyzer subagent tasks. Do not pause after `todowrite`, after reading `scope.json`/`log.md`/`findings.md`, or after appending the recon log entry.
-4. `/engage` is not complete until one of these happens in the same turn after initialization: (a) BOTH recon tasks are launched, or (b) you record an explicit stop reason via `./scripts/append_log_entry.sh "$DIR" operator "Run stop" "stop_reason=<code>" "<reason>"` and return `Stop reason: <code> — <reason>`.
+   **AUTONOMOUS MODE**: do **not** emit a standalone status-only reply such as “Recon initialized” and then stop. In the SAME assistant turn as the recon-start log entry, immediately launch recon-specialist and, when web/source artifacts are available, source-analyzer. Do not pause after `todowrite`, after reading `scope.json`/`log.md`/`findings.md`, or after appending the recon log entry.
+4. `/engage` is not complete until one of these happens in the same turn after initialization: (a) recon-specialist is launched and source-analyzer is either launched or explicitly deferred because no web/source target exists yet, or (b) you record an explicit stop reason via `./scripts/append_log_entry.sh "$DIR" operator "Run stop" "stop_reason=<code>" "<reason>"` and return `Stop reason: <code> — <reason>`.
 5. After recon completes, record ALL findings to `findings.md`.
 6. At every later phase transition, append one concise operator timeline entry via `./scripts/append_log_entry.sh`.
 7. This no-standalone-status rule applies to the ENTIRE autonomous run, not just recon. During Collect, Consume & Test, Exploit, and Report, never end a turn with progress text alone while queue work, surface coverage, auth validation, or reporting work remains. Any mid-run status text must be paired in the same turn with an advancing tool action.
@@ -258,7 +263,7 @@ This is NOT optional.
 ```
 [operator] Recon complete. Starting collection:
   - Importing N endpoints into case queue
-  - Starting Katana crawler
+  - Starting Katana only for confirmed web target(s), otherwise deferring crawler and collecting service-specific evidence
   - Queue: [show dispatcher.sh stats]
 ```
 

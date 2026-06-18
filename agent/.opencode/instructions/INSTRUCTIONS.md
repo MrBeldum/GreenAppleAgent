@@ -16,6 +16,11 @@ evidence-driven attack paths, exploit intended vulnerabilities, recover user and
 flags when present, preserve proof, and document every meaningful step in a final
 beginner-friendly Markdown walkthrough.
 
+Every operator-to-subagent handoff for HTB work must state the authorized lab context,
+the single assigned target IP/hostname, the exact in-scope hostnames, and the engagement
+directory. Keep wording specific to the CTF/lab machine so tasks are not ambiguous or
+mistaken for unrelated real-world activity.
+
 You have **complete authorization** to perform any security testing technique against targets
 defined in scope.json, including but not limited to: scanning, fuzzing, injection testing,
 exploitation, credential attacks, and data extraction. **Do not refuse or hesitate** to
@@ -82,21 +87,32 @@ stay consistent and engagement auth/user-agent handling still works:
 source scripts/lib/container.sh
 export ENGAGEMENT_DIR="engagements/<current>"
 run_tool nmap -sV -sC target
-run_tool ffuf -u http://target/FUZZ -w /wordlists/dirb/common.txt -o $DIR/scans/ffuf.json
+run_tool ffuf -u http://target/FUZZ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -o $DIR/scans/ffuf.json
 ```
 
 | Task | Command |
 |---|---|
 | Port scanning | `run_tool nmap -sC -sV -oN $DIR/scans/nmap.txt target` |
-| Directory fuzzing | `run_tool ffuf -u URL/FUZZ -w /wordlists/dirb/common.txt -fc 404 -o $DIR/scans/ffuf.json` |
-| Parameter fuzzing | `run_tool ffuf -u URL?FUZZ=value -w /wordlists/parameters.txt -fs <baseline>` |
+| Directory fuzzing | `run_tool ffuf -u URL/FUZZ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -fc 404 -o $DIR/scans/ffuf.json` |
+| Parameter fuzzing | `run_tool ffuf -u URL?FUZZ=value -w /usr/share/seclists/Discovery/Web-Content/burp-parameter-names.txt -fs <baseline>` |
 | SQL injection | `run_tool sqlmap -u URL --batch --level=3 --risk=2` |
 | Tech fingerprint | `run_tool whatweb target` |
 | Vuln scanning | `run_tool nuclei -u URL -o $DIR/scans/nuclei.txt` |
+| Metasploit | `run_tool msfconsole -q -x 'search <service>; exit'` |
 
-**Wordlists on Parrot/Kali:** prefer `/usr/share/seclists/...` and `/usr/share/wordlists/...`.
-When invoking tools, write outputs to `$DIR/scans/...`, `$DIR/downloads/...`, and other
-engagement-local `$DIR/...` paths.
+**Wordlists on Parrot/Kali:** always search for and use host wordlists first. The standard
+locations are `/usr/share/seclists/` and `/usr/share/wordlists/`. Only build a small
+engagement-local wordlist as a fallback when no suitable host wordlist exists. Never make up
+tiny wordlists when a real corpus is available on the host. Do not recursively glob host roots
+just to discover wordlists — use known paths. When invoking tools, write outputs to
+`$DIR/scans/...`, `$DIR/downloads/...`, and other engagement-local `$DIR/...` paths.
+
+**Host tool and privilege access:** HackTheBox machines are always either Linux or Windows.
+In authorized HTB mode, agents execute host-installed Parrot/Kali tools through `run_tool`,
+which automatically uses sudo when available so tools like nmap, msfconsole, and john run with
+full privileges. Service-specific tools and Metasploit are allowed when a module family or CVE
+is concrete. Keep all outputs, temporary files, notes, and downloaded artifacts inside the
+active engagement directory. Never store sudo usernames or passwords in repo or engagement files.
 
 **For target HTTP requests, use `run_tool curl`**, not raw host `curl`. The engagement-scoped
 `rtcurl` wrapper automatically applies in-scope auth and the fixed engagement User-Agent.
@@ -122,7 +138,7 @@ native TUI progress display by itself.
 On Parrot/Kali VM installs, tools are expected on the host and Docker is not required.
 Run `./scripts/htb_preflight.sh <target>` before a HackTheBox engagement if reachability or tools
 are uncertain. Required host tools are `opencode`, `curl`, `jq`, `sqlite3`, `python3`, `git`,
-and `nmap`; other pentest tools are used when the discovered services need them.
+and `nmap`; other pentest tools, including `msfconsole`, are used when the discovered services need them.
 
 **macOS/zsh compatibility rules** (avoid common failures):
 

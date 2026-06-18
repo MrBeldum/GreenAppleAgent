@@ -174,6 +174,7 @@ Quick-reference per tool, organized by usage phase.
 |------|------|
 | `tools/exploitation/sqlmap.md` | SQL injection detection and exploitation |
 | `tools/exploitation/hydra.md` | Online password brute-forcing |
+| `tools/exploitation/metasploit.md` | Bounded module search/check/exploit workflow for concrete CVEs/services |
 
 ### tools/cracking/ — Used by: exploit-developer
 

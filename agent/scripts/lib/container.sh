@@ -175,8 +175,27 @@ run_tool() {
         _load_engagement_env
         if [[ "$tool" == "curl" && -x "${ENGAGEMENT_DIR_ABS}/tools/rtcurl" ]]; then
             "${ENGAGEMENT_DIR_ABS}/tools/rtcurl" "$@"
+        elif command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
+            sudo "$tool" "$@"
         else
             "$tool" "$@"
+        fi
+    )
+}
+
+run_privileged() {
+    _resolve_engagement_dir || return 1
+    (
+        cd "$ENGAGEMENT_DIR_ABS"
+        export ENGAGEMENT_DIR="$ENGAGEMENT_DIR_ABS"
+        _load_engagement_env
+        if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+            "$@"
+        elif command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
+            sudo "$@"
+        else
+            echo "ERROR: sudo is not available non-interactively. Configure passwordless sudo for this VM user or run sudo -v before autonomous work; never store sudo credentials in GreenAppleAgent files." >&2
+            return 1
         fi
     )
 }
