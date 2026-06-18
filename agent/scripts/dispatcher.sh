@@ -9,11 +9,9 @@ source "$SCRIPT_DIR/lib/params.sh"
 source "$SCRIPT_DIR/lib/placeholders.sh"
 source "$SCRIPT_DIR/lib/source_queue_filter.sh"
 
-# Emit a `case_done` runtime event per id so the orchestrator's cases /
-# dispatches mirror tables stay populated under SERIALIZED dispatch.
-# Best-effort: emit_runtime_event.sh self-noops when ORCHESTRATOR_* env
-# vars are unset, and the underlying curl is already backgrounded with
-# 1s/2s timeouts. If jq or python3 is missing the call is skipped.
+# Emit best-effort case outcome events when event env vars are set.
+# Normal OpenCode HTB runs leave those vars unset, so emit_runtime_event.sh no-ops.
+# If jq or python3 is missing the call is skipped.
 EMIT_RUNTIME_EVENT="${EMIT_RUNTIME_EVENT:-$SCRIPT_DIR/emit_runtime_event.sh}"
 emit_case_done_batch() {
     # emit_case_done_batch <outcome> <comma-separated-ids>
@@ -417,7 +415,7 @@ case "$ACTION" in
 
     # Per-(agent, type, stage) in-flight guard. Lets the same agent run
     # on different (stage, type) combos concurrently — exactly the
-    # cross-stage parallelism Rule 1 of operator-core.md promises.
+    # cross-stage parallelism Rule 1 of the operator prompt promises.
     IN_FLIGHT_FOR_AGENT=$(sql "SELECT COUNT(*) FROM cases WHERE status='processing' AND assigned_agent='${AGENT}' AND type='${TYPE}' AND stage='${STAGE_ESC}';")
     if [[ "${IN_FLIGHT_FOR_AGENT:-0}" =~ ^[0-9]+$ ]] && (( IN_FLIGHT_FOR_AGENT > 0 )); then
       echo "[]"

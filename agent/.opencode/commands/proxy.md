@@ -17,8 +17,8 @@ If no engagement directory exists, inform the user to run `/engage` first and st
 ## Step 2: Parse Action
 
 Read the user's arguments appended below this template. Expect one of:
-- `start` — launch the proxy container
-- `stop` — terminate the proxy container
+- `start` — launch the local mitmproxy process
+- `stop` — terminate the local mitmproxy process
 
 If no action is provided, default to `start`.
 
@@ -30,13 +30,8 @@ export ENGAGEMENT_DIR="$ENG_DIR"
 start_proxy
 ```
 
-This starts the `redteam-proxy` Docker container with:
-- Port 8080 exposed via `--network host`
-- Engagement directory mounted at `/engagement`
-- proxy_addon.py writing to cases.db and auth.json
-
-The actual container name is engagement-scoped (`redteam-proxy-<engagement-slug>`), so
-parallel engagements do not collide.
+This starts local `mitmdump` with the engagement directory configured so `proxy_addon.py`
+can write to `cases.db` and `auth.json`.
 
 Tell the user: "Proxy listening on port 8080. Configure browser proxy: http://127.0.0.1:8080"
 
@@ -47,7 +42,7 @@ source scripts/lib/container.sh
 stop_proxy
 ```
 
-This stops and removes the `redteam-proxy` Docker container.
+This stops the local mitmproxy process for the active engagement.
 
 ## User Arguments
 

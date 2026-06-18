@@ -1,7 +1,7 @@
 ---
 name: cors-testing
 description: CORS misconfiguration testing for data theft and access control bypass
-origin: RedteamOpencode
+origin: GreenAppleAgent
 ---
 
 # CORS Misconfiguration Testing

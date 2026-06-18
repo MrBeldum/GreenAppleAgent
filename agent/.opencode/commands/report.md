@@ -38,24 +38,33 @@ collection failures, or unresolved high-risk surfaces instead of generating a mi
 Do NOT call the `skill` tool for report-generation. The required report format and methodology
 are already defined in this command and in your agent instructions. Follow them directly.
 
-Create `report.md` in the engagement directory with the following structure:
+Create `report.md` in the engagement directory with the following HTB walkthrough structure:
 
 ```markdown
-# Penetration Test Report
+# HTB Machine Walkthrough: <name-or-ip>
 
-## Executive Summary
-- Target, scope, and engagement timeframe
-- High-level summary of results (total findings by severity)
-- Overall risk assessment
+## Scope And Setup
+- Target, scope, engagement timeframe, VPN/runtime notes, and boundaries.
 
-## Scope and Methodology
-- Target definition and boundaries
-- Tools and techniques used
-- Methodology phases executed
+## Recon Summary
+- Open ports, services, versions, hostnames, and initial conclusions.
 
-## Findings
+## Service Enumeration
+- Service-by-service enumeration, important evidence, credentials, endpoints, and dead ends.
 
-### [FINDING-NNN] Title
+## Initial Foothold
+- Vulnerability or chain used to get initial access, exact commands/payloads, and session proof.
+
+## Privilege Escalation
+- Local enumeration, privesc route, commands, exploit steps, and elevated-context proof.
+
+## Proof / Flags
+- User flag proof when present: path, context, and challenge-appropriate proof excerpt.
+- Root flag proof when present: path, context, and challenge-appropriate proof excerpt.
+
+## Findings And Impact
+
+### FINDING-NNN: Title
 - **Severity**: HIGH | MEDIUM | LOW | INFO
 - **OWASP Category**: classification
 - **Type**: vulnerability type
@@ -69,13 +78,16 @@ Create `report.md` in the engagement directory with the following structure:
 
 (Repeat for each finding, ordered by severity: HIGH first, then MEDIUM, LOW, INFO)
 
-## Attack Narrative
-Chronological walkthrough of the engagement: what was discovered, what was tested, and how findings were confirmed. This tells the story of the assessment.
+## Cleanup Notes
+- Files touched, accounts/sessions created, listeners/processes started, and cleanup performed or recommended.
+
+## Lessons Learned
+- Beginner-friendly explanation of what mattered, what was noise, and how each step led to the next.
+
+## Attack Path Narrative
+Chronological walkthrough of the engagement: what was discovered, what was tested, how findings were confirmed, and how the foothold/privesc path developed. This tells the story of the assessment.
 If there is no credible multi-step chain, include the exact sentence:
 `No multi-step attack paths identified.`
-
-## Recommendations
-Prioritized list of remediation actions, grouped by effort (quick wins vs. longer-term fixes).
 
 ## Appendix
 - Tool versions used

@@ -28,7 +28,7 @@ if [[ ! -d "$ENGAGEMENT_DIR_RAW" ]]; then
     exit 1
 fi
 
-# Resolve to absolute path (Docker -v requires absolute paths)
+# Resolve to absolute path for local process management.
 if [[ "$ENGAGEMENT_DIR_RAW" = /* ]]; then
     export ENGAGEMENT_DIR="$ENGAGEMENT_DIR_RAW"
 else
@@ -116,14 +116,8 @@ trap cleanup_katana_ingest EXIT
 katana_runtime_active() {
     [[ "$KATANA_INGEST_STARTED_KATANA" == "1" ]] || return 1
 
-    if [[ "$(runtime_mode)" == "local" ]]; then
-        pid_is_running "$(_pid_file "katana")"
-        return $?
-    fi
-
-    local container_name
-    container_name="$(_katana_container_name)" || return 1
-    docker ps --format '{{.Names}}' | grep -q "^${container_name}$"
+    pid_is_running "$(_pid_file "katana")"
+    return $?
 }
 
 fallback_has_usable_output() {

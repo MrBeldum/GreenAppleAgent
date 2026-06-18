@@ -25,7 +25,7 @@ trim_whitespace() {
 
 continuous_target_matches() {
     local configured target hostname rule normalized_rule target_host
-    configured="$(trim_whitespace "${REDTEAM_CONTINUOUS_TARGETS:-${CONTINUOUS_OBSERVATION_TARGETS:-}}")"
+    configured="$(trim_whitespace "${GREENAPPLE_CONTINUOUS_TARGETS:-${CONTINUOUS_OBSERVATION_TARGETS:-}}")"
     [[ -n "$configured" ]] || return 1
 
     target="$(jq -r '.target // empty' "$SCOPE_FILE" 2>/dev/null || true)"
@@ -207,7 +207,7 @@ print((u.hostname or "") + " " + str(u.port or (443 if u.scheme == "https" else 
 PY
 )
     [[ "$host" == "127.0.0.1" || "$host" == "localhost" || "$host" == "host.docker.internal" ]] || return 1
-    case ",${REDTEAM_RECALL_FINALIZE_GUARD_PORTS:-8000}," in
+    case ",${GREENAPPLE_RECALL_FINALIZE_GUARD_PORTS:-8000}," in
         *,"$port",*) return 0 ;;
         *) return 1 ;;
     esac
@@ -215,7 +215,7 @@ PY
 
 recall_finalize_guard() {
     local target result status missing
-    [[ "${REDTEAM_SKIP_RECALL_FINALIZE_GUARD:-0}" == "1" ]] && return 0
+    [[ "${GREENAPPLE_SKIP_RECALL_FINALIZE_GUARD:-0}" == "1" ]] && return 0
     is_local_juice_shop_target || return 0
 
     target="$(jq -r '.target // empty' "$SCOPE_FILE" 2>/dev/null || true)"

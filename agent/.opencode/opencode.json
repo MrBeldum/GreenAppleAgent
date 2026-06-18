@@ -36,36 +36,15 @@
     "skills/open-redirect-testing/SKILL.md",
     "skills/osint-recon/SKILL.md",
     "skills/sensitive-data-detection/SKILL.md",
+    "references/hackthebox-machine-mode.md",
     "references/INDEX.md"
   ],
   "plugin": [
     "./plugins"
   ],
-  "mcp": {
-    "metasploit": {
-      "type": "local",
-      "command": [
-        "bash",
-        "scripts/start_metasploit_mcp.sh"
-      ],
-      "enabled": true,
-      "timeout": 10000,
-      "environment": {
-        "MSF_USER": "{env:MSF_USER}",
-        "MSF_PASSWORD": "{env:MSF_PASSWORD}",
-        "MSF_SERVER": "{env:MSF_SERVER}",
-        "MSF_PORT": "{env:MSF_PORT}",
-        "MSF_SSL": "{env:MSF_SSL}",
-        "LOG_LEVEL": "{env:METASPLOIT_MCP_LOG_LEVEL}"
-      }
-    }
-  },
-  "tools": {
-    "metasploit_*": false
-  },
   "agent": {
     "operator": {
-      "description": "Lead red team operator. Drives pentest methodology, coordinates the streaming case-pipeline, dispatches subagents.",
+      "description": "Lead HTB operator. Drives enumeration, exploit planning, user/root flag pursuit, reporting, and subagent coordination for authorized machines.",
       "mode": "primary",
       "prompt": "{file:prompts/agents/operator.txt}",
       "read": true,
@@ -76,7 +55,7 @@
       "grep": true
     },
     "recon-specialist": {
-      "description": "Passive/active recon: fingerprinting, directory fuzzing, tech stack identification.",
+      "description": "HTB recon specialist: fingerprinting, service enumeration, directory fuzzing, and attack-surface discovery for the assigned machine.",
       "mode": "subagent",
       "prompt": "{file:prompts/agents/recon-specialist.txt}",
       "read": true,
@@ -87,7 +66,7 @@
       "grep": false
     },
     "vulnerability-analyst": {
-      "description": "Analyzes scan results, identifies vulnerability patterns, prioritizes attack paths.",
+      "description": "HTB vulnerability analyst: triages discovered surface, prioritizes foothold and privilege-escalation paths, and returns evidence-backed recommendations.",
       "mode": "subagent",
       "prompt": "{file:prompts/agents/vulnerability-analyst.txt}",
       "read": true,
@@ -98,7 +77,7 @@
       "grep": true
     },
     "exploit-developer": {
-      "description": "Crafts and executes exploits: SQLi payloads, XSS chains, auth bypass techniques.",
+      "description": "HTB exploit specialist: crafts and executes in-scope exploits, chains impact, and pursues user/root flag proof when assigned.",
       "mode": "subagent",
       "prompt": "{file:prompts/agents/exploit-developer.txt}",
       "read": true,
@@ -106,13 +85,10 @@
       "edit": false,
       "bash": true,
       "glob": true,
-      "grep": true,
-      "tools": {
-        "metasploit_*": true
-      }
+      "grep": true
     },
     "fuzzer": {
-      "description": "High-volume fuzzing with deep wordlists (500+ payloads). Picks up cases at stage=fuzz_pending escalated by vulnerability-analyst.",
+      "description": "HTB fuzzer: bounded high-volume fuzzing for paths, parameters, and credentials that may unlock foothold or privilege escalation.",
       "mode": "subagent",
       "prompt": "{file:prompts/agents/fuzzer.txt}",
       "read": true,
@@ -123,7 +99,7 @@
       "grep": true
     },
     "source-analyzer": {
-      "description": "Deep static analysis of HTML/JS/CSS to extract hidden routes, API endpoints, and secrets.",
+      "description": "HTB source analyzer: extracts hidden routes, APIs, secrets, and client-side attack surface from fetched HTML/JS/CSS.",
       "mode": "subagent",
       "prompt": "{file:prompts/agents/source-analyzer.txt}",
       "read": true,
@@ -134,18 +110,18 @@
       "grep": true
     },
     "report-writer": {
-      "description": "Generates structured engagement report from logs and findings.",
+      "description": "HTB report writer: generates a detailed beginner-friendly Markdown walkthrough from logs, findings, proof, and flags.",
       "mode": "subagent",
       "prompt": "{file:prompts/agents/report-writer.txt}",
       "read": true,
       "write": true,
       "edit": true,
-      "bash": false,
+      "bash": true,
       "glob": true,
       "grep": true
     },
     "osint-analyst": {
-      "description": "OSINT intelligence gathering \u2014 CVE/breach/DNS/social research from intel.md. Dispatched when intel_changed_check.sh writes .osint-respawn-required (idempotent high-water mark on intel.md filled rows).",
+      "description": "HTB OSINT analyst: enriches intel.md with CVE, breach, DNS, and contextual clues that support authorized machine exploitation.",
       "mode": "subagent",
       "prompt": "{file:prompts/agents/osint-analyst.txt}",
       "read": true,
@@ -265,6 +241,12 @@
       "agent": "recon-specialist",
       "subtask": true
     },
+    "htb": {
+      "description": "Start an HTB machine engagement from a Parrot/Kali VM",
+      "template": "{file:commands/htb.md}\n\n{file:commands/engage.md}\n\n$ARGUMENTS",
+      "agent": "operator",
+      "subtask": false
+    },
     "osint": {
       "description": "Run OSINT intelligence gathering on current engagement",
       "template": "{file:commands/osint.md}\n\n$ARGUMENTS",
@@ -274,6 +256,9 @@
   },
   "permission": {
     "Read": "allow",
+    "Write": "allow",
+    "Edit": "allow",
+    "Bash": "allow",
     "Glob": "allow",
     "Grep": "allow",
     "skill": {

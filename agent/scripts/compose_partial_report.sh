@@ -6,7 +6,7 @@ set -euo pipefail
 #
 # Why: the report-writer pass at end-of-cycle is the only thing that
 # produces report.md today. If the cycle is killed mid-pipeline (timeout,
-# Docker outage, operator stop), the engagement leaves zero report
+# runtime outage or operator stop), the engagement leaves zero report
 # artifact even when findings.md has 10+ findings on disk. This helper
 # composes a thin "best-effort" report from what's already on disk so the
 # operator and post-mortem reader never face an empty hand.

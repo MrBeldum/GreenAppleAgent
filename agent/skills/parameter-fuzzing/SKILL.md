@@ -1,7 +1,7 @@
 ---
 name: parameter-fuzzing
 description: Discover hidden parameters, test values, and identify input handling anomalies
-origin: RedteamOpencode
+origin: GreenAppleAgent
 ---
 
 # Parameter Fuzzing

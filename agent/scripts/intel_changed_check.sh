@@ -6,7 +6,7 @@ set -euo pipefail
 #
 # Without this, osint-analyst ends up at 0 dispatches per cycle (observed
 # pattern across 2 audited engagements): the trigger condition in
-# operator-core.md is "parallel with exploit-developer when intel.md
+# operator prompt behavior is "parallel with exploit-developer when intel.md
 # gains entries", but the operator has no mechanical way to know intel
 # grew. vulnerability-analyst silently fills in CVE/breach references
 # inline as part of its findings, and the operator never separately

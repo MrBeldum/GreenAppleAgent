@@ -13,7 +13,7 @@ The two subagent classes:
   contract. Triggered by lifecycle events (engagement start, respawn flags,
   end-of-cycle) and write to artifacts directly.
 
-See `agent/operator-core.md` for the canonical stage list and `Rule 6` hygiene.
+See `.opencode/prompts/agents/operator.txt` for the canonical stage list and `Rule 6` hygiene.
 
 ---
 
@@ -42,7 +42,7 @@ optional Surface Candidates and findings.
 **Trigger**: `fetch-by-stage ingested <type> <limit> source-analyzer` for
 `type ∈ {javascript, page, stylesheet, data, unknown, api-spec}`. The operator
 runs `prune_vendor_cases.py` BEFORE every javascript fetch (see
-`operator-core.md` Rule 6) so vendor noise never lands here.
+operator prompt Rule 6) so vendor noise never lands here.
 
 **Outputs**: API endpoints extracted, frontend routes, secrets/tokens, hidden
 paths, source maps, Surface Candidates, plus the mandatory `### Case Outcomes`.
@@ -123,7 +123,7 @@ the mandatory `### Case Outcomes` for case-batch dispatches.
 2. New paths/endpoints discovered → ingest as new cases at `stage=ingested`
    (the natural type-router will hand them back to v-analyst or source-analyzer).
 3. Confirmed valid credentials → write to auth.json + trigger the credential
-   auto-use flow (see `operator-core.md` Credential Auto-Use).
+   auto-use flow (see operator prompt Credential Auto-Use).
 
 ---
 
@@ -150,7 +150,7 @@ Outcomes`; non-batch runs use the `### Exploitation Results` block.
    next `auth_respawn_check.sh` tick will write `.auth-respawn-required` and
    the operator re-dispatches recon-specialist + source-analyzer with the
    auth context. Also dispatch a bounded auth-validation exploit-developer
-   pass in the SAME turn (see `operator-core.md`).
+   pass in the SAME turn (see the operator prompt).
 3. CONFIRMED + new attack surface → ingest new cases at `stage=ingested`.
 4. PARTIAL → record as MEDIUM, consider scheduling a follow-up fuzz via
    `STAGE=fuzz_pending` if depth is needed.
@@ -202,7 +202,7 @@ findings.md, intel.md, cases.db, intel-secrets.json, auth.json.
 ## Mechanical Respawn Flags (per-tick checks)
 
 Both flags are written by idempotent high-water-mark checks; the operator runs
-them every tick (see `operator-core.md`).
+them every tick (see the operator prompt).
 
 | Flag file | Writer | Operator action |
 |---|---|---|

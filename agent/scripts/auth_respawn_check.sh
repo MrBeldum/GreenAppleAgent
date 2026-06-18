@@ -4,7 +4,7 @@ set -euo pipefail
 # auth_respawn_check.sh — detect newly validated credentials and signal
 # the operator to re-dispatch recon-specialist with the new auth context.
 #
-# Without this, the credential-auto-use rule in operator-core.md is just
+# Without this, the credential-auto-use rule in the operator prompt is just
 # advisory text; the operator can land an auth foothold and forget to
 # re-recon under the new identity. This helper does the diff mechanically:
 #   - reads auth.json validated_credentials count

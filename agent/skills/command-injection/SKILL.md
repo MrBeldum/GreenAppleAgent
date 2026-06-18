@@ -1,7 +1,7 @@
 ---
 name: command-injection
 description: OS command injection detection, exploitation, and filter bypass
-origin: RedteamOpencode
+origin: GreenAppleAgent
 ---
 
 # OS Command Injection Testing

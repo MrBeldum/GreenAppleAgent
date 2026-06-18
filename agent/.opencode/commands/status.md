@@ -76,17 +76,18 @@ sqlite3 "$ENG_DIR/cases.db" ".timeout 5000" "
   ORDER BY total DESC;"
 ```
 
-## Step 3: Container Status
+## Step 3: Background Process Status
 
 ```bash
-source scripts/lib/container.sh
-export ENGAGEMENT_DIR="$ENG_DIR"
-PROXY_NAME=$(_proxy_container_name 2>/dev/null || true)
-KATANA_NAME=$(_katana_container_name 2>/dev/null || true)
-
-for name in "$PROXY_NAME" "$KATANA_NAME"; do
-  [ -n "$name" ] || continue
-  docker ps --format "{{.Names}} ({{.Status}})" --filter "name=^${name}$" 2>/dev/null
+for pid_file in "$ENG_DIR"/pids/*.pid; do
+  [ -f "$pid_file" ] || continue
+  name=$(basename "$pid_file" .pid)
+  pid=$(cat "$pid_file" 2>/dev/null || true)
+  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+    echo "$name running (pid $pid)"
+  else
+    echo "$name stopped"
+  fi
 done
 ```
 

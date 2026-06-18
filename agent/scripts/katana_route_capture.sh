@@ -220,30 +220,13 @@ run_route_capture_attempt() {
         katana_args+=("$item")
     done < <(build_katana_args "$enable_hybrid" "$enable_headless" "$enable_xhr")
 
-    if [[ "$(runtime_mode)" == "local" ]]; then
-        "$KATANA_LOCAL_BIN" \
-            "${katana_args[@]}" \
-            "${scope_args[@]+${scope_args[@]}}" \
-            "${auth_args[@]+${auth_args[@]}}" \
-            -elog "$err_path" \
-            -o "$out_path" \
-            >/dev/null
-    else
-        local out_mount
-        local err_mount
-        out_mount="/engagement/scans/route-captures/$(basename "$out_path")"
-        err_mount="/engagement/scans/route-captures/$(basename "$err_path")"
-        docker run --rm \
-            --network host \
-            -v "${ENGAGEMENT_DIR_ABS}:/engagement" \
-            "$KATANA_IMAGE" \
-            "${katana_args[@]}" \
-            "${scope_args[@]+${scope_args[@]}}" \
-            "${auth_args[@]+${auth_args[@]}}" \
-            -elog "$err_mount" \
-            -o "$out_mount" \
-            >/dev/null
-    fi
+    "$KATANA_LOCAL_BIN" \
+        "${katana_args[@]}" \
+        "${scope_args[@]+${scope_args[@]}}" \
+        "${auth_args[@]+${auth_args[@]}}" \
+        -elog "$err_path" \
+        -o "$out_path" \
+        >/dev/null
 }
 
 route_capture_needs_fallback() {

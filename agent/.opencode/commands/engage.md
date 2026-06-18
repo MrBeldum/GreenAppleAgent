@@ -112,8 +112,8 @@ EOF
 : > "$DIR/surfaces.jsonl"
 printf "[]\n" > "$DIR/intel-secrets.json"
 
-if [ -f ".redteam-seed/auth.json" ]; then
-  cp ".redteam-seed/auth.json" "$DIR/auth.json"
+if [ -f ".greenapple-seed/auth.json" ]; then
+  cp ".greenapple-seed/auth.json" "$DIR/auth.json"
 else
   cat > "$DIR/auth.json" << EOF
 {
@@ -168,19 +168,8 @@ source scripts/lib/container.sh
 RUNTIME_MODE=$(runtime_mode)
 
 echo ""
-echo "=== Docker Check ==="
-check_docker
-
-echo ""
-echo "=== Image Check ==="
-check_images
-
-echo ""
 echo "=== Local Tools ==="
-tools=(curl jq sqlite3)
-if [ "$RUNTIME_MODE" != "local" ]; then
-  tools+=(docker)
-fi
+tools=(curl jq sqlite3 python3 git nmap)
 for tool in "${tools[@]}"; do
   if which "$tool" >/dev/null 2>&1; then
     echo "[OK] $tool"
@@ -190,13 +179,8 @@ for tool in "${tools[@]}"; do
 done
 ```
 
-If images are missing in Docker runtime, tell the user:
-"Docker images not built yet. Run: `cd docker && docker compose build`"
-Wait for user to confirm images are built before proceeding.
-
-If `runtime_mode` is `local`, do NOT stop just because the `docker` CLI is absent. Local runtime already treats `check_docker` and `check_images` success as sufficient, and only `curl`, `jq`, and `sqlite3` are mandatory in that mode.
-
-If Docker runtime is active and Docker is not installed, the engagement CANNOT proceed. Tell the user to install Docker first.
+If required local tools are missing, explain the missing package in beginner-friendly terms.
+Do not require Docker; this runtime is Parrot/Kali host-tool based.
 
 ## Step 4: Configure Authentication
 
@@ -304,7 +288,7 @@ After approval:
 
 ### Phase 3: CONSUME & TEST (streaming dispatch loop)
 
-This phase follows the streaming pipeline contract — see `operator-core.md` Stage-Based
+This phase follows the streaming pipeline contract — see `.opencode/prompts/agents/operator.txt` Stage-Based
 Dispatch (Rules 1–7) for the canonical rules; do not duplicate or contradict them here.
 Boot sequence and the few engage-specific shortcuts:
 
@@ -323,7 +307,7 @@ Boot sequence and the few engage-specific shortcuts:
 5. BEFORE every `fetch-by-stage ingested javascript` batch, run
    `python3 ./scripts/prune_vendor_cases.py "$DIR/cases.db"` so vendor / runtime / chunk /
    polyfill / source-map noise is marked `stage=clean` without burning a source-analyzer
-   dispatch (Rule 6 in operator-core).
+   dispatch (operator prompt Rule 6).
 6. Coverage hygiene (carried over): when coverage-expanding source batches remain
    (`ingested api-spec`, `ingested javascript`, `ingested unknown`, or a seed-like
    `ingested page` such as the root/bootstrap page), prefer draining one of those before
@@ -335,7 +319,7 @@ Boot sequence and the few engage-specific shortcuts:
 8. If credentials land in auth.json during this loop, dispatch a bounded exploit-developer
    auth-validation task in the SAME turn. The next `auth_respawn_check.sh` tick will write
    `.auth-respawn-required`, signalling re-dispatch of recon-specialist + source-analyzer
-   with auth context (operator-core Credential Auto-Use).
+   with auth context (operator prompt Credential Auto-Use).
 9. Continue until `stats-by-stage` shows zero cases at `ingested|source_analyzed|
    vuln_confirmed|fuzz_pending`, zero rows in `processing`, and recon-specialist has
    returned at least once (Rule 5 stop condition).
@@ -368,7 +352,7 @@ If the recent intel.md churn has not yet triggered an osint-respawn pass, run
 
 ### Phase 5: REPORT
 
-Dispatch report-writer with the engagement directory. See `operator-core.md` Rule 8 for the
+Dispatch report-writer with the engagement directory. See the operator prompt Rule 8 for the
 full contract (interim snapshots via `compose_partial_report.sh`, partial-marker cleanup,
 and `finalize_engagement.sh` as the only allowed finalization command).
 

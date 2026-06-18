@@ -1,7 +1,7 @@
 ---
 name: web-recon
 description: Enumerate web technologies, headers, endpoints, and metadata from a target
-origin: RedteamOpencode
+origin: GreenAppleAgent
 ---
 
 # Web Reconnaissance

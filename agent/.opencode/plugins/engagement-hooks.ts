@@ -1,5 +1,5 @@
 /**
- * Engagement Hooks Plugin for RedteamOpencode
+ * Engagement Hooks Plugin for GreenAppleAgent
  *
  * Provides session-aware engagement tracking, scope enforcement,
  * and automatic logging for red team operations.

@@ -44,7 +44,7 @@ continuous_target_matches() {
     local eng_dir="${1:?engagement dir required}"
     local configured target hostname rule normalized_rule target_host
 
-    configured="$(trim_whitespace "${REDTEAM_CONTINUOUS_TARGETS:-${CONTINUOUS_OBSERVATION_TARGETS:-}}")"
+    configured="$(trim_whitespace "${GREENAPPLE_CONTINUOUS_TARGETS:-${CONTINUOUS_OBSERVATION_TARGETS:-}}")"
     [[ -n "$configured" ]] || return 1
 
     target="$(scope_target_url "$eng_dir")"

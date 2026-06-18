@@ -58,13 +58,18 @@ else
     echo "Not configured"
 fi
 
-# Container state
-echo "=== Containers ==="
-source "$SCRIPTS/lib/container.sh"
-export ENGAGEMENT_DIR="$ENG_DIR"
-PROXY_NAME="$(_proxy_container_name)"
-KATANA_NAME="$(_katana_container_name)"
-docker ps --format "{{.Names}} ({{.Status}})" --filter "name=^${PROXY_NAME}$" --filter "name=^${KATANA_NAME}$" 2>/dev/null || echo "None running"
+# Background process state
+echo "=== Background Processes ==="
+for pid_file in "$ENG_DIR"/pids/*.pid; do
+  [ -f "$pid_file" ] || continue
+  name=$(basename "$pid_file" .pid)
+  pid=$(cat "$pid_file" 2>/dev/null || true)
+  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+    echo "$name running (pid $pid)"
+  else
+    echo "$name stopped"
+  fi
+done
 ```
 
 ## Step 3: Recover Interrupted Queue State
@@ -117,9 +122,9 @@ Determine resume point from `scope.json`, `cases.db`, and stage stats
 (`./scripts/dispatcher.sh "$ENG_DIR/cases.db" stats-by-stage`):
 - Active stages have rows (`ingested|source_analyzed|vuln_confirmed|fuzz_pending` non-zero)
   OR `processing` rows exist → resume the streaming dispatch loop per
-  `operator-core.md` Stage-Based Dispatch (Rules 1–7)
+  `.opencode/prompts/agents/operator.txt` Stage-Based Dispatch (Rules 1–7)
 - Active stages drained but `vuln_confirmed` cases remain or report not yet generated →
-  continue with the residual exploit / report work per `operator-core.md` Rule 8
+  continue with the residual exploit / report work per the operator prompt Rule 8
 - No `cases.db` → run engage.md Step 6 Phase 2 (Collect): import recon endpoints, start
   Katana
 - No recon data → run engage.md Step 6 Phase 1 (Initial Recon Dispatch): launch
@@ -144,7 +149,7 @@ Use this exact routing pattern when you need a queue-driven resume snippet. Spec
 `<stage> <type> <agent>` triples ordered from coverage-expanding source first, through
 API-family triage, low-yield source backlog, then `vuln_confirmed` exploit work and
 `fuzz_pending` deep-fuzz. The loop stops at the first non-empty batch — that batch must be
-matched with a `task(...)` dispatch in the SAME assistant turn (operator-core Rule 1).
+matched with a `task(...)` dispatch in the SAME assistant turn (operator prompt Rule 1).
 
 ```bash
 ROOT=/workspace
@@ -152,7 +157,7 @@ SCRIPTS="$ROOT/scripts"
 DB="$ENG_DIR/cases.db"
 BATCH_FILE="$ENG_DIR/scans/resume-batch.json"
 : > "$BATCH_FILE"
-# vendor-noise prune before any ingested-javascript fetch (operator-core Rule 6).
+# vendor-noise prune before any ingested-javascript fetch (operator prompt Rule 6).
 python3 "$SCRIPTS/prune_vendor_cases.py" "$DB"
 for spec in \
   'ingested api-spec source-analyzer' \

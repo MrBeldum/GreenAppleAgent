@@ -7,10 +7,6 @@
 #   tests/                            — local QA test infrastructure
 #   local-hermes-agent/               — operator-side audit / cycle tooling
 #   agent/tests/                      — legacy colocated tests (consolidated)
-#   orchestrator/tests/               — legacy colocated tests
-#   orchestrator/backend/tests/       — legacy colocated tests
-#   orchestrator/frontend/src/test/   — legacy colocated tests
-#   orchestrator/backend/data/        — runtime state (DB, projects)
 #
 # Why the hook exists: on 2026-05-07 the auditor SKILL contained a rule
 # allowing `git add -f tests/...` for "committed regression tests". Across
@@ -23,7 +19,7 @@
 
 set -euo pipefail
 
-forbidden_re='^(tests/|local-hermes-agent/|agent/tests/|orchestrator/tests/|orchestrator/backend/tests/|orchestrator/frontend/src/test/|orchestrator/backend/data/)'
+forbidden_re='^(tests/|local-hermes-agent/|agent/tests/)'
 
 # --diff-filter=AMR: Added, Modified, Renamed (rename target). Deletions
 # (D) are intentionally allowed so this hook never blocks future cleanup

@@ -1,7 +1,7 @@
 ---
 name: jwt-testing
 description: JWT token attack techniques — alg bypass, key confusion, claim tampering
-origin: RedteamOpencode
+origin: GreenAppleAgent
 ---
 
 # JWT Testing (JSON Web Token Attacks)

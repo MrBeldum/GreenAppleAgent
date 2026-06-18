@@ -12,15 +12,15 @@ echo "Engagement: $ENG_DIR"
 
 If no engagement directory exists, inform the user that no active engagement was found.
 
-## Step 2: Stop All Containers
+## Step 2: Stop Background Processes
 
 ```bash
 source scripts/lib/container.sh
 stop_all_containers
 ```
 
-This stops the mitmproxy and Katana Docker containers for the active engagement if running.
-It must not stop containers belonging to another engagement.
+This stops mitmproxy and Katana background processes for the active engagement if running.
+It must not stop processes belonging to another engagement.
 
 ## Step 3: Show Final Queue Stats
 
@@ -35,7 +35,7 @@ If `cases.db` exists, display final queue statistics:
 Ask the user if they would like to:
 - Generate a final report now with `/report`
 - Review findings in `<engagement_dir>/findings.md`
-- Resume processing later (containers can be restarted)
+- Resume processing later (background producers can be restarted)
 
 ## User Arguments
 

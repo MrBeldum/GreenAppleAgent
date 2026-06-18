@@ -184,7 +184,7 @@ Quick-reference per tool, organized by usage phase.
 
 ## runtime-guides/ — Shared Runtime References
 
-Shared operator/runtime references. Used by: operator, Claude, Codex.
+Shared operator/runtime references. Used by the OpenCode operator and subagents.
 
 | File | Purpose |
 |------|---------|
