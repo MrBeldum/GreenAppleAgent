@@ -1,4 +1,4 @@
-# GreenAppleAgent (NOTE: THIS PROJECT IS RETIRED. I WOULD NOT RECOMMEND USING IT)
+# GreenAppleAgent (NOTE: THIS PROJECT IS RETIRED, AND I WOULD NOT RECOMMEND USING IT)
 
 **The OpenCode agent that hunts HackTheBox machines.** Built for Kali & Parrot OS VMs. No Docker. No Claude. No nonsense. Just HTB.
 
