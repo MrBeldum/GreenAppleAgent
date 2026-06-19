@@ -14,11 +14,17 @@ Use this mode only for authorized HackTheBox/CTF lab machines from a ParrotOS or
 ## VM-Native Tooling
 
 - Default runtime is `GREENAPPLE_RUNTIME_MODE=local`; `run_tool` executes host-installed Parrot/Kali tools from the VM using sudo by default so tools run with full privileges (nmap raw sockets, msfconsole, john, etc.).
-- Still use `run_tool <tool>` for consistency, auth handling, logging, and engagement-local paths.
-- All tools run through `run_tool` automatically get sudo when available non-interactively. If `sudo -n` fails, `run_tool` falls back to unprivileged execution and logs a warning. Configure passwordless sudo or run `sudo -v` before starting an autonomous session.
-- Use `run_privileged <command>` only for explicit VM-local setup such as appending to `/etc/hosts`. Never store sudo credentials in GreenAppleAgent files.
-- Always search for and use host wordlists from `/usr/share/seclists/` and `/usr/share/wordlists/` before building small engagement-local lists. Never make up tiny wordlists when a real corpus exists.
-- Start OpenCode with `./run-htb.sh` from the installed runtime directory.
+- All tools run through `run_tool` which always uses `sudo -n -E`. If sudo is not available non-interactively, the agent fails immediately with a clear message.
+- Use `run_privileged <command>` only for explicit VM-local setup such as appending to `/etc/hosts`. Never store sudo credentials.
+- Always search for and use host wordlists from `/usr/share/seclists/` and `/usr/share/wordlists/` before building small engagement-local lists.
+- Start OpenCode with `./run-htb.sh` from the installed runtime directory. This primes sudo and starts a keepalive loop.
+- Missing optional tools are auto-installed via `./scripts/ensure_tools.sh`.
+- Hostname management: use `./scripts/htb_hosts.sh "$DIR" <ip> <hostname1> <hostname2>...` to auto-map and deduplicate /etc/hosts entries.
+- State tracking: `./scripts/htb_state.py init "$DIR"` creates `state.json` and `notes.md` at engagement start.
+- Flag capture: `./scripts/flag_capture.sh "$DIR" user|root <flag_value>`
+- Credential chaining: `./scripts/credential_matrix.sh "$DIR" <target_ip>`
+- Attempt guard: `./scripts/attempt_guard.sh "$DIR" <vector> <agent>` enforces per-vector attempt limits.
+- Decision gate: `./scripts/htb_decision_gate.sh "$DIR"` checks all scan/enum/credential gates before reporting.
 - Run `./scripts/htb_preflight.sh <target>` if tools, VPN, or reachability look suspicious.
 
 ## Beginner-Friendly Workflow
@@ -48,12 +54,20 @@ Do not paste huge raw outputs into chat. Summarize the important lines and refer
 
 ## Recon Order
 
-1. Quick TCP service scan: `nmap -Pn -sC -sV` against common/default ports. For bare HTB IPs, include common Windows/AD, Linux, file-sharing, database, and web ports instead of only web ports.
-2. Full TCP port sweep: `nmap -Pn -p- --min-rate 5000`, then detailed scan only newly found ports.
-3. UDP only when hinted or when TCP is low-signal; keep it bounded.
-4. For web ports, run technology fingerprinting, content discovery, vhost checks if a hostname is present, and source review. Always use host wordlists (`/usr/share/seclists/`, `/usr/share/wordlists/`) for fuzzing, not tiny made-up lists.
+1. Quick TCP service scan: `nmap -Pn -sS -sV -T4 --open` against common ports. For bare HTB IPs, include Windows/AD, Linux, file-sharing, database, and web ports.
+2. Full TCP port sweep: `nmap -Pn -sS -p- --min-rate 5000`, then detailed scan only newly found ports.
+3. **UDP is mandatory** — scan top 50 ports minimum: `nmap -Pn -sU --top-ports 50 --open`
+4. For web ports, run technology fingerprinting, content discovery, vhost checks if a hostname is present, and deep source analysis (raw HTML, JS, CSS inspection with `source_artifact_summary.py`). Always use host wordlists (`/usr/share/seclists/`, `/usr/share/wordlists/`) for fuzzing.
 5. For SMB/FTP/NFS/LDAP/WinRM/SSH, enumerate with service-appropriate tools before guessing credentials.
-6. For Active Directory/DC signals, prioritize DNS, LDAP RootDSE, SMB security posture, Kerberos username discovery, AS-REP/Kerberoast checks when usernames exist, ADCS/LAPS/SPN hypotheses, and WinRM credential validation after credentials.
+6. For Active Directory/DC signals, prioritize DNS, LDAP RootDSE, SMB security posture, Kerberos username discovery (generate hundreds of evidence-derived candidates, not a tiny list), AS-REP/Kerberoast checks when usernames exist, ADCS/LAPS/SPN hypotheses, and WinRM credential validation after credentials.
+7. **Use the built-in recon pipeline for bare HTB IPs:**
+   ```bash
+   ./scripts/htb_recon.sh "$DIR" <target_ip>
+   ```
+   This runs all scan phases and updates `state.json`. Follow with per-service enumeration:
+   ```bash
+   ./scripts/htb_service_enum.sh "$DIR" <target_ip> <port/protocol>
+   ```
 
 ## HackTheBox Attack-Path Discipline
 

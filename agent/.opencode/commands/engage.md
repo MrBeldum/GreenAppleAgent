@@ -245,15 +245,29 @@ TUI progress panel is driven by the todo list.
 
 1. Log the engagement start in `log.md` via:
    `./scripts/append_log_entry.sh "$DIR" operator "Engagement start" "phase 1 recon" "initialized workspace and starting recon"`
-2. Present recon plan:
-   - **recon-specialist**: always dispatch first for service discovery, open ports, hostnames, and service-specific enumeration.
-   - **source-analyzer**: dispatch in parallel only when an explicit or discovered web target has HTML/JS/CSS/source artifacts to analyze. For service-neutral targets with no confirmed web service, defer source-analyzer and record that no source artifacts exist yet.
+2. **For bare HackTheBox IP targets (port 0 / service-neutral):** Run the HTB recon pipeline first:
+   ```bash
+   ./scripts/htb_recon.sh "$DIR" <target_ip>
+   ```
+   This runs: quick common TCP scan → full TCP `-p-` sweep → targeted `-sC -sV` → UDP top ports → OS detection.
+   After recon completes, for each discovered open TCP port run service-specific enumeration:
+   ```bash
+   for port in <comma-separated-ports>; do
+     ./scripts/htb_service_enum.sh "$DIR" <target_ip> "$port/tcp/<service_name>"
+   done
+   ```
+   If HTTP/HTTPS is detected, `htb_service_enum.sh` automatically launches `htb_web_enum.sh` for deep web enumeration.
+   **Only after** the recon pipeline completes or discovers HTTP services, dispatch:
+   - **recon-specialist**: for manual service verification, additional fingerprinting, and hostname/subdomain discovery.
+   - **source-analyzer**: dispatch in parallel only when web artifacts exist. For service-neutral targets with no confirmed web service, defer source-analyzer.
 3. **INTERACTIVE MODE**: wait for user approval before sending traffic.
-   **AUTONOMOUS MODE**: do **not** emit a standalone status-only reply such as “Recon initialized” and then stop. In the SAME assistant turn as the recon-start log entry, immediately launch recon-specialist and, when web/source artifacts are available, source-analyzer. Do not pause after `todowrite`, after reading `scope.json`/`log.md`/`findings.md`, or after appending the recon log entry.
-4. `/engage` is not complete until one of these happens in the same turn after initialization: (a) recon-specialist is launched and source-analyzer is either launched or explicitly deferred because no web/source target exists yet, or (b) you record an explicit stop reason via `./scripts/append_log_entry.sh "$DIR" operator "Run stop" "stop_reason=<code>" "<reason>"` and return `Stop reason: <code> — <reason>`.
-5. After recon completes, record ALL findings to `findings.md`.
+   **AUTONOMOUS MODE**: do **not** emit a standalone status-only reply after initialization. In the SAME assistant turn, immediately launch recon via `htb_recon.sh` for HTB IPs or dispatch recon-specialist for explicit URLs.
+4. After recon completes, record ALL findings to `findings.md`.
+5. When hostnames are discovered (DNS, LDAP, SMB, Kerberos, HTTP certs), add them to `/etc/hosts`:
+   ```bash
+   ./scripts/htb_hosts.sh "$DIR" <target_ip> <hostname1> <hostname2> ...
+   ```
 6. At every later phase transition, append one concise operator timeline entry via `./scripts/append_log_entry.sh`.
-7. This no-standalone-status rule applies to the ENTIRE autonomous run, not just recon. During Collect, Consume & Test, Exploit, and Report, never end a turn with progress text alone while queue work, surface coverage, auth validation, or reporting work remains. Any mid-run status text must be paired in the same turn with an advancing tool action.
 
 ### Phase 2: COLLECT (start immediately after recon)
 

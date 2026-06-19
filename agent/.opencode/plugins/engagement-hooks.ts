@@ -254,18 +254,50 @@ export const EngagementHooksPlugin = async ({
     /**
      * tool.execute.before
      *
-     * For bash tool calls, extract hostnames/URLs from the command and
-     * compare against the active engagement's scope list. Warn on
-     * out-of-scope targets. This is heuristic/best-effort.
-     * NOTE: OpenCode plugin API cannot block execution, only warn.
+     * 1. SUDO WRAP: All bash commands are wrapped with sudo -n -E bash -lc.
+     *    Non-bash commands (shell builtins, simple scripts without external
+     *    tool calls) that deliberately avoid sudo are allowed through when
+     *    they start with known-local-wrapper prefixes.
+     * 2. SCOPE CHECK: Extract hostnames/URLs and warn on out-of-scope targets.
      */
     "tool.execute.before": async (
-      input: { tool: string; args?: Record<string, unknown> }
+      input: { tool: string; args?: Record<string, unknown> },
+      output: { args?: Record<string, unknown> }
     ) => {
       if (input.tool !== "bash") return
 
       const command = String(input.args?.command || input.args || "")
       if (!command) return
+
+      const skipSudoPrefixes = [
+        "source ", ". ", "export ", "cd ", "mkdir ", "rm ", "cp ", "mv ",
+        "cat ", "printf ", "echo ", "jq ", "sqlite3 ", "python3 ",
+        "ls ", "find ", "wc ", "head ", "tail ", "sort ", "uniq ",
+        "sed ", "awk ", "cut ", "tr ", "tee ", "touch ", "chmod ",
+        "chown ", "ln ", "read ", "grep ", "rg ", "true", "false",
+        "test ", "[ ", "[[ ", ":", "exec ", "set ", "unset ",
+        "declare ", "local ", "readonly ", "shift", "while ", "for ",
+        "if ", "then", "else", "elif", "fi", "do", "done",
+        "./scripts/", "DIR=", "ENG_DIR=", "ENGAGEMENT_DIR=", "ROOT=",
+        "KATANA_START", "TARGET=", "HOSTNAME_CLEAN=", "DATE=", "TIME=",
+        "USER_AGENT", "BATCH_FILE=", "TMP_JSONL=", "USER_AGENTS_TMP",
+        "SCRIPTS=", "SPEC_FILE=", "JQ_FILTER=", "PREVIEW=",
+        "FETCH_STAGE=", "TMP_LOCAL_DIR=", "LOCK_DIR=", "LOCK_FILE=",
+        "TMP_", "LOG_FILE=", "SCOPE_FILE=", "REPORT_FILE=",
+      ]
+
+      const shouldSkipSudo = skipSudoPrefixes.some(prefix => command.startsWith(prefix))
+        || command.includes("<<'EOF'")
+        || command.includes("<< 'EOF'")
+
+      if (!shouldSkipSudo) {
+        if (output.args && typeof output.args === "object") {
+          const cmd = command.trim()
+          const escaped = cmd.replace(/'/g, "'\\''")
+          ;(output.args as Record<string, unknown>).command =
+            `sudo -n -E bash -lc '${escaped}'`
+        }
+      }
 
       const hostnames = extractHostnames(command)
       if (hostnames.length === 0) return

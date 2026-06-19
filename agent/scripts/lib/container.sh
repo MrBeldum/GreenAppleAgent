@@ -166,36 +166,49 @@ _katana_scope_array() {
     fi
 }
 
+_sudo_or_die() {
+    if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+        return 0
+    fi
+    if ! command -v sudo >/dev/null 2>&1; then
+        echo "FATAL: sudo is required for GreenAppleAgent HTB operations." >&2
+        echo "Install sudo and configure passwordless access: sudo visudo -f /etc/sudoers.d/greenapple" >&2
+        return 1
+    fi
+    if ! sudo -n true >/dev/null 2>&1; then
+        echo "FATAL: sudo requires interactive password. Run sudo -v before launching OpenCode." >&2
+        echo "Or configure passwordless sudo for the VM user." >&2
+        return 1
+    fi
+}
+
 run_tool() {
     local tool="$1"; shift
     _resolve_engagement_dir || return 1
+    _sudo_or_die || return 1
     (
         cd "$ENGAGEMENT_DIR_ABS"
         export ENGAGEMENT_DIR="$ENGAGEMENT_DIR_ABS"
         _load_engagement_env
         if [[ "$tool" == "curl" && -x "${ENGAGEMENT_DIR_ABS}/tools/rtcurl" ]]; then
-            "${ENGAGEMENT_DIR_ABS}/tools/rtcurl" "$@"
-        elif command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
-            sudo "$tool" "$@"
+            sudo -n -E "${ENGAGEMENT_DIR_ABS}/tools/rtcurl" "$@"
         else
-            "$tool" "$@"
+            sudo -n -E "$tool" "$@"
         fi
     )
 }
 
 run_privileged() {
     _resolve_engagement_dir || return 1
+    _sudo_or_die || return 1
     (
         cd "$ENGAGEMENT_DIR_ABS"
         export ENGAGEMENT_DIR="$ENGAGEMENT_DIR_ABS"
         _load_engagement_env
         if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
             "$@"
-        elif command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
-            sudo "$@"
         else
-            echo "ERROR: sudo is not available non-interactively. Configure passwordless sudo for this VM user or run sudo -v before autonomous work; never store sudo credentials in GreenAppleAgent files." >&2
-            return 1
+            sudo -n -E "$@"
         fi
     )
 }

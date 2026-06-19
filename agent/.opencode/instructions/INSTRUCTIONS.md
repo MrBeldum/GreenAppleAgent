@@ -135,43 +135,11 @@ native TUI progress display by itself.
 
 ## Tool Availability
 
-On Parrot/Kali VM installs, tools are expected on the host and Docker is not required.
+On Parrot/Kali VM installs, tools are expected on the host.
 Run `./scripts/htb_preflight.sh <target>` before a HackTheBox engagement if reachability or tools
 are uncertain. Required host tools are `opencode`, `curl`, `jq`, `sqlite3`, `python3`, `git`,
 and `nmap`; other pentest tools, including `msfconsole`, are used when the discovered services need them.
-
-**macOS/zsh compatibility rules** (avoid common failures):
-
-Shell environment:
-- In for-loops and subshells, PATH may be lost. Use ABSOLUTE PATHS for ALL commands:
-  `/usr/bin/curl`, `/usr/bin/head`, `/usr/bin/tail`, `/usr/bin/wc`, `/usr/bin/grep`,
-  `/usr/bin/sed`, `/usr/bin/awk`, `/usr/bin/sort`, `/usr/bin/tr`
-- **IMPORTANT:** On macOS, `cat` is at `/bin/cat` NOT `/usr/bin/cat`. Use `/bin/cat`.
-  Similarly: `/bin/ls`, `/bin/rm`, `/bin/mkdir`, `/bin/echo`.
-- Or set PATH at the start of every script block:
-  `export PATH="/bin:/usr/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"`
-- This is the #1 cause of silent failures in engagement scripts.
-
-Grep:
-- Do NOT use `grep -P` (Perl regex) — macOS has BSD grep. Use `grep -E` (extended) instead
-- Do NOT use `grep -oP` — use `grep -oE` or pipe through `sed`/`awk`
-- For complex regex, use `rg` (ripgrep) which supports Perl regex natively
-
-Heredoc:
-- When writing files with `cat > file << EOF` containing `$VARIABLES` that MUST expand:
-  use UNQUOTED delimiter (`<< EOF`), NOT single-quoted (`<< 'EOF'`).
-- When writing arbitrary Markdown, JSON, JSONL, jq filters, curl payloads, or other literal text
-  to a temp file, prefer a SINGLE-QUOTED heredoc (`<<'EOF'`). This prevents shell expansion,
-  command substitution, and backtick execution from corrupting the content.
-- Never paste raw Markdown with backticks, JSON, or jq programs directly inside a single-quoted
-  `bash -lc '...'` block. Write the content to a temp file with `<<'EOF'`, then pass the file path
-  to the helper script.
-- For `jq` updates, keep the filter out of shell-quoted inline code when possible:
-  `JQ_FILTER='.phases_completed += ["recon"] | .current_phase = "collect"'`
-  `jq "$JQ_FILTER" "$DIR/scope.json" > "$DIR/scope_tmp.json" && mv "$DIR/scope_tmp.json" "$DIR/scope.json"`
-
-General:
-- Always test loop scripts with a simple case before running large batches
+Missing optional tools are auto-installed via `./scripts/ensure_tools.sh`.
 
 ## Efficiency Rules
 
